@@ -1,21 +1,46 @@
-# Use the official Go image as the base
-FROM golang:1.20-alpine
+# Build stage
+FROM golang:1.21 AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy go.mod and go.sum first for dependency download
+# Install protoc and plugins
+RUN apt-get update && apt-get install -y protobuf-compiler
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+
+# Copy go.mod and go.sum
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the source code
+# Copy source code
 COPY . .
 
-# Build the Go application
-RUN go build -o server ./cmd/server
+# Generate proto files with correct module path
+RUN protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    --proto_path=./proto ./proto/dream_journal.proto
 
-# Expose port 8080 (if that's what your Go server uses)
-EXPOSE 8080
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server
+
+# Final stage
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy the binary from builder
+COPY --from=builder /app/server .
+
+# Create a non-root user and set permissions
+RUN adduser -D -u 1000 appuser && \
+    chown appuser:appuser /app/server && \
+    chmod +x /app/server
+
+# Switch to non-root user
+USER appuser
+
+# Expose the gRPC port
+EXPOSE 50051
 
 # Run the server
 CMD ["./server"]

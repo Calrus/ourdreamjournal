@@ -1,0 +1,10 @@
+# Go
+/backend/bin
+/backend/vendor/
+*.exe
+# Node
+/frontend/node_modules/
+build/
+# IDE
+.vscode/
+.DS_Store

@@ -1,34 +1,32 @@
-version: '3.8'
-
 services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: dreamjournal
+      POSTGRES_PASSWORD: dreamjournal
+      POSTGRES_DB: dreamjournal
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dreamjournal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: my-go-backend
+    ports:
+      - "50051:50051"
+    environment:
+      DATABASE_URL: "postgres://dreamjournal:dreamjournal@postgres:5432/dreamjournal?sslmode=disable"
+      PORT: "50051"
     depends_on:
-      - db
-    ports:
-      - "8080:8080"
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: myuser
-      DB_PASSWORD: mysecretpassword
-      DB_NAME: mydb
-
-  db:
-    image: postgres:15
-    container_name: my-postgres-container
-    environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: mydb
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    restart: unless-stopped
+      postgres:
+        condition: service_healthy
 
 volumes:
-  postgres-data:
+  postgres_data:
