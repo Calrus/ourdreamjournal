@@ -1,4 +1,4 @@
-module github.com/devse/dreamjournal/ourdreamjournal/backend
+module github.com/Calrus/ourdreamjournal/backend
 
 go 1.21
 

@@ -2,39 +2,40 @@ syntax = "proto3";
 package dreamjournal;
 
 // Go import path and local package name for generated code
-option go_package = "github.com/devse/dreamjournal/ourdreamjournal/backend/proto;proto";
+option go_package = "github.com/Calrus/ourdreamjournal/backend/proto";
 
 // Dream represents a single dream entry
 message Dream {
   string id = 1;
   string user_id = 2;
   string text = 3;
-  int64 timestamp = 4;
+  int64 timestamp = 4;  // Unix timestamp
   bool public = 5;
 }
 
-// DreamRequest is used for creating a new dream
+// DreamRequest is used to create a new dream entry
 message DreamRequest {
   string user_id = 1;
   string text = 2;
   bool public = 3;
 }
 
-// DreamResponse returns the ID of the created dream
+// DreamResponse is returned after creating a dream
 message DreamResponse {
-  string id = 1;
+  Dream dream = 1;
 }
 
-// ListRequest filters dreams by user
+// ListRequest is used to fetch dreams
 message ListRequest {
   string user_id = 1;
+  bool include_public = 2;  // Whether to include public dreams from other users
 }
 
 // DreamJournal service definition
 service DreamJournal {
-  // Create a new dream entry
-  rpc CreateDream(DreamRequest) returns (DreamResponse);
-
-  // Stream dreams for a given user
-  rpc ListDreams(ListRequest) returns (stream Dream);
+  // CreateDream creates a new dream entry
+  rpc CreateDream(DreamRequest) returns (DreamResponse) {}
+  
+  // ListDreams streams dreams based on the request parameters
+  rpc ListDreams(ListRequest) returns (stream Dream) {}
 }
