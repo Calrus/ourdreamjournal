@@ -11,5 +11,6 @@ param(
 & protoc `
   --go_out="$OutDir" `
   --go-grpc_out="$OutDir" `
+  --grpc-gateway_out="$OutDir" `
   --proto_path="$ProtoDir" `
   "$ProtoDir\dream_journal.proto"

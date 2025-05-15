@@ -39,8 +39,8 @@ RUN adduser -D -u 1000 appuser && \
 # Switch to non-root user
 USER appuser
 
-# Expose the gRPC port
-EXPOSE 50051
+# Expose the REST API port
+EXPOSE 8080
 
-# Run the server
+# Run the REST API server
 CMD ["./server"]

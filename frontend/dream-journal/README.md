@@ -1,46 +1,84 @@
-# Getting Started with Create React App
+# Dream Journal Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, responsive web application for recording and managing dream entries. Built with React, TypeScript, and Tailwind CSS.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- 📝 Create, read, update, and delete dream entries
+- 🎨 Modern UI with dark mode support
+- 📱 Mobile-first responsive design
+- ✨ Smooth animations and transitions
+- 🏷️ Tag and categorize dreams
+- 🌙 Track dream moods and patterns
+- 🔍 Search and filter functionality
+- 📊 Dream statistics and insights
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- React 19
+- TypeScript
+- Tailwind CSS
+- shadcn/ui Components
+- Framer Motion
+- React Router
+- Formik & Yup
+- Lucide Icons
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Getting Started
 
-### `npm test`
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. Start the development server:
+   ```bash
+   npm start
+   ```
 
-### `npm run build`
+3. Build for production:
+   ```bash
+   npm run build
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Project Structure
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+src/
+├── components/
+│   ├── ui/           # Reusable UI components
+│   ├── dream/        # Dream-related components
+│   └── layout/       # Layout components
+├── lib/             # Utility functions
+├── styles/          # Global styles
+└── types/           # TypeScript type definitions
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Styling Guidelines
 
-### `npm run eject`
+- Mobile-first responsive design
+- Consistent spacing (p-6, m-6)
+- Rounded corners (2xl)
+- Soft shadows
+- Color palette:
+  - Primary: Muted blue (#3B82F6)
+  - Secondary: Warm gray (#6B7280)
+  - Accent: Coral (#F97316)
+- Typography:
+  - Font: Inter
+  - Headings: xl-3xl
+  - Body: 16px with 1.5 line-height
+- Dark mode support
+- Smooth transitions
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Contributing
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## License
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+MIT

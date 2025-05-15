@@ -5,9 +5,11 @@ go 1.21
 toolchain go1.23.9
 
 require (
+	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/pinecone-io/go-pinecone v1.1.1
 	github.com/pinecone-io/go-pinecone/v3 v3.1.0
+	github.com/rs/cors v1.10.1
 	github.com/sashabaranov/go-openai v1.40.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.1

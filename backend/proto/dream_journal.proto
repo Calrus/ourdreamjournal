@@ -1,8 +1,37 @@
 syntax = "proto3";
 package dreamjournal;
 
+import "google/api/annotations.proto";
+
 // Go import path and local package name for generated code
 option go_package = "github.com/Calrus/ourdreamjournal/backend/proto";
+
+// User represents a user account
+message User {
+  string id = 1;
+  string email = 2;
+  string username = 3;
+  int64 created_at = 4;
+}
+
+// RegisterRequest is used to create a new user account
+message RegisterRequest {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+}
+
+// LoginRequest is used to authenticate a user
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// AuthResponse is returned after successful authentication
+message AuthResponse {
+  User user = 1;
+  string token = 2;
+}
 
 // Dream represents a single dream entry
 message Dream {
@@ -33,9 +62,34 @@ message ListRequest {
 
 // DreamJournal service definition
 service DreamJournal {
+  // Register creates a new user account
+  rpc Register(RegisterRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/api/register"
+      body: "*"
+    };
+  }
+  
+  // Login authenticates a user
+  rpc Login(LoginRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/api/login"
+      body: "*"
+    };
+  }
+  
   // CreateDream creates a new dream entry
-  rpc CreateDream(DreamRequest) returns (DreamResponse) {}
+  rpc CreateDream(DreamRequest) returns (DreamResponse) {
+    option (google.api.http) = {
+      post: "/api/dream"
+      body: "*"
+    };
+  }
   
   // ListDreams streams dreams based on the request parameters
-  rpc ListDreams(ListRequest) returns (stream Dream) {}
+  rpc ListDreams(ListRequest) returns (stream Dream) {
+    option (google.api.http) = {
+      get: "/api/dreams"
+    };
+  }
 }
