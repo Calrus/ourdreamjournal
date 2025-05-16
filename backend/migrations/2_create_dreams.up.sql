@@ -5,7 +5,9 @@ CREATE TABLE IF NOT EXISTS dreams (
     public BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    public_id TEXT UNIQUE NOT NULL DEFAULT (substring(md5(random()::text) for 10))
+    public_id TEXT UNIQUE NOT NULL DEFAULT (substring(md5(random()::text) for 10)),
+    summary TEXT,
+    prophecy TEXT
 );
 
 -- Backfill for existing rows (safe to run multiple times)

@@ -239,6 +239,18 @@ func main() {
 		d.ID = publicID
 		d.CreatedAt = createdAt
 		d.UpdatedAt = updatedAt
+		// Fetch tags
+		tags := []string{}
+		tagRows, err := dbpool.Query(context.Background(), "SELECT tag FROM dream_tags WHERE dream_id=$1", id)
+		if err == nil {
+			for tagRows.Next() {
+				var tag string
+				tagRows.Scan(&tag)
+				tags = append(tags, tag)
+			}
+			tagRows.Close()
+		}
+		d.Tags = tags
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(d)
 	}).Methods("GET")
@@ -256,11 +268,16 @@ func main() {
 			http.Error(w, "Missing dream id", http.StatusBadRequest)
 			return
 		}
-		// Look up dream text by public_id
-		var text string
-		err := dbpool.QueryRow(context.Background(), "SELECT text FROM dreams WHERE public_id=$1", req.Id).Scan(&text)
+		// Look up dream text and prophecy by public_id
+		var text, prophecy string
+		err := dbpool.QueryRow(context.Background(), "SELECT text, prophecy FROM dreams WHERE public_id=$1", req.Id).Scan(&text, &prophecy)
 		if err != nil {
 			http.Error(w, "Dream not found", http.StatusNotFound)
+			return
+		}
+		if prophecy != "" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]string{"prophecy": prophecy})
 			return
 		}
 		apiKey := os.Getenv("OPENAI_API_KEY")
@@ -285,10 +302,12 @@ func main() {
 			http.Error(w, "Failed to generate prophecy", http.StatusInternalServerError)
 			return
 		}
-		prophecy := ""
+		prophecy = ""
 		if len(resp.Choices) > 0 {
 			prophecy = resp.Choices[0].Message.Content
 		}
+		// Cache prophecy in DB
+		_, _ = dbpool.Exec(context.Background(), "UPDATE dreams SET prophecy=$1 WHERE public_id=$2", prophecy, req.Id)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"prophecy": prophecy})
 	}).Methods("POST")
@@ -414,11 +433,16 @@ func main() {
 			http.Error(w, "Missing dream id", http.StatusBadRequest)
 			return
 		}
-		// Look up dream text by public_id
-		var text string
-		err := dbpool.QueryRow(context.Background(), "SELECT text FROM dreams WHERE public_id=$1", req.Id).Scan(&text)
+		// Look up dream text and summary by public_id
+		var text, summary string
+		err := dbpool.QueryRow(context.Background(), "SELECT text, summary FROM dreams WHERE public_id=$1", req.Id).Scan(&text, &summary)
 		if err != nil {
 			http.Error(w, "Dream not found", http.StatusNotFound)
+			return
+		}
+		if summary != "" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]string{"summary": summary})
 			return
 		}
 		apiKey := os.Getenv("OPENAI_API_KEY")
@@ -442,10 +466,12 @@ func main() {
 			http.Error(w, "Failed to summarize dream", http.StatusInternalServerError)
 			return
 		}
-		summary := ""
+		summary = ""
 		if len(resp.Choices) > 0 {
 			summary = resp.Choices[0].Message.Content
 		}
+		// Cache summary in DB
+		_, _ = dbpool.Exec(context.Background(), "UPDATE dreams SET summary=$1 WHERE public_id=$2", summary, req.Id)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"summary": summary})
 	}).Methods("POST")
