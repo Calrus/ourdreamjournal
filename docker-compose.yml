@@ -15,18 +15,37 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    image: migrate/migrate:v4.18.3
+    command: ["-path", "/migrations", "-database", "postgres://dreamjournal:dreamjournal@postgres:5432/dreamjournal?sslmode=disable", "up"]
+    working_dir: /migrations
+    volumes:
+      - ./backend/migrations:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
       - "50051:50051"
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: "postgres://dreamjournal:dreamjournal@postgres:5432/dreamjournal?sslmode=disable"
       PORT: "50051"
+      RESET_DB: "true"   # Uncomment to reset the database on next up
+      POSTGRES_USER: dreamjournal
+      POSTGRES_PASSWORD: dreamjournal
+      POSTGRES_DB: dreamjournal
+      POSTGRES_HOST: postgres
+    volumes:
+      - ./backend/migrations:/migrations
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:

@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import client, { Stats } from '../../api/client';
+import { Badge } from '../ui/badge';
 
 export const StatsDashboard: React.FC = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState<any[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -21,6 +25,24 @@ export const StatsDashboard: React.FC = () => {
     };
 
     fetchStats();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    setAiLoading(true);
+    setAiError(null);
+    fetch('/api/ai-insights', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ userId: user.id }),
+    })
+      .then((res) => res.json())
+      .then((data) => setAiInsights(data))
+      .catch(() => setAiError('Failed to fetch AI insights.'))
+      .finally(() => setAiLoading(false));
   }, [user]);
 
   if (isLoading) {
@@ -68,6 +90,32 @@ export const StatsDashboard: React.FC = () => {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* AI Insights Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">AI Insights</h2>
+        {aiLoading && <div>Loading AI insights...</div>}
+        {aiError && <div className="text-red-500">{aiError}</div>}
+        {!aiLoading && !aiError && aiInsights.length > 0 && (
+          <div className="space-y-6">
+            {aiInsights.map((insight) => (
+              <div key={insight.dreamId} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg shadow">
+                <div className="mb-2 text-base text-gray-700 dark:text-gray-200">
+                  <span className="font-semibold">Summary:</span> {insight.summary}
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {insight.tags.map((tag: string) => (
+                    <Badge key={tag} className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {!aiLoading && !aiError && aiInsights.length === 0 && <div>No AI insights available.</div>}
       </div>
     </div>
   );

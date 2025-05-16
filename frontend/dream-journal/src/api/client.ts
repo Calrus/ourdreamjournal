@@ -20,9 +20,11 @@ export interface AuthResponse {
 
 export interface Dream {
   id: string;
-  title: string;
-  content: string;
-  date: string;
+  userId: string;
+  text: string;
+  public: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Tag {
@@ -111,6 +113,33 @@ const client = {
       },
     });
     return response.data;
+  },
+
+  async summarizeDream(id: string): Promise<string> {
+    const response = await axios.post(`${API_URL}/api/dreams/summary`, { id }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    return response.data.summary;
+  },
+
+  async generateProphecy(id: string): Promise<string> {
+    const response = await axios.post(`${API_URL}/api/dreams/prophecy`, { id }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    return response.data.prophecy;
+  },
+
+  async getDreamTags(id: string): Promise<string[]> {
+    const response = await axios.get(`${API_URL}/api/dreams/${id}/tags`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    return response.data.tags;
   },
 };
 

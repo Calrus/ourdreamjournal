@@ -28,8 +28,22 @@ FROM alpine:latest
 
 WORKDIR /app
 
+# Install psql client for DB reset functionality
+RUN apk add --no-cache postgresql-client
+
 # Copy the binary from builder
 COPY --from=builder /app/server .
+
+# Copy entrypoint script
+COPY scripts/entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
+# Install migrate CLI (correct extraction for Alpine)
+RUN wget -O migrate.tar.gz https://github.com/golang-migrate/migrate/releases/download/v4.18.3/migrate.linux-amd64.tar.gz \
+    && tar -xzf migrate.tar.gz \
+    && mv migrate /usr/local/bin/migrate \
+    && chmod +x /usr/local/bin/migrate \
+    && rm migrate.tar.gz
 
 # Create a non-root user and set permissions
 RUN adduser -D -u 1000 appuser && \
@@ -40,7 +54,6 @@ RUN adduser -D -u 1000 appuser && \
 USER appuser
 
 # Expose the REST API port
-EXPOSE 8080
+EXPOSE 50051
 
-# Run the REST API server
-CMD ["./server"]
+ENTRYPOINT ["./entrypoint.sh"]

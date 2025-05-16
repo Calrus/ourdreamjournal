@@ -54,10 +54,37 @@ message DreamResponse {
   Dream dream = 1;
 }
 
+// DreamSummary is returned after summarizing a dream
+message DreamSummary {
+  string summary = 1;
+}
+
+// ProphecyResponse is returned after generating a prophecy
+message ProphecyResponse {
+  string prophecy = 1;
+}
+
+// TagResponse is returned after extracting tags from a dream
+message TagResponse {
+  repeated string tags = 1;
+}
+
 // ListRequest is used to fetch dreams
 message ListRequest {
   string user_id = 1;
   bool include_public = 2;  // Whether to include public dreams from other users
+}
+
+// UserRequest is used to fetch AI insights for a user
+message UserRequest {
+  string user_id = 1;
+}
+
+// DreamInsight contains AI summary and tags for a dream
+message DreamInsight {
+  string dream_id = 1;
+  string summary = 2;
+  repeated string tags = 3;
 }
 
 // DreamJournal service definition
@@ -92,4 +119,16 @@ service DreamJournal {
       get: "/api/dreams"
     };
   }
+
+  // SummarizeDream summarizes a dream using OpenAI
+  rpc SummarizeDream(DreamRequest) returns (DreamSummary);
+
+  // DreamProphecy generates a mystical prophecy from a dream
+  rpc DreamProphecy(DreamRequest) returns (ProphecyResponse);
+
+  // TagDream extracts tags from a dream using OpenAI
+  rpc TagDream(DreamRequest) returns (TagResponse);
+
+  // GetAIInsights streams AI insights for a user's dreams
+  rpc GetAIInsights(UserRequest) returns (stream DreamInsight);
 }

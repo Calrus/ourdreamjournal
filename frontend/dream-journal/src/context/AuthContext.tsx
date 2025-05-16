@@ -31,13 +31,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for stored user data on mount
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    
+    async function verifyToken() {
+      if (token) {
+        try {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          await axios.get(`${API_URL}/api/me`);
+        } catch (err) {
+          setUser(null);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          delete axios.defaults.headers.common['Authorization'];
+        }
+      }
+    }
     if (storedUser && token) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
-        // Set the default authorization header
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        verifyToken();
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('user');
@@ -51,19 +63,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await axios.post(`${API_URL}/api/login`, { email, password });
       const { user, token } = response.data;
-      
+      if (!user || !token) {
+        throw new Error('Invalid response from server');
+      }
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', token);
-      
-      // Set the default authorization header
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      // Redirect to the page they tried to visit or home
+      // Only navigate if login is successful
       const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
-    } catch (error) {
-      console.error('Login failed:', error);
+    } catch (error: any) {
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
+      // Do not navigate on error
+      // Optionally show a user-friendly error
+      // alert('Login failed: Invalid email or password, or server unavailable.');
       throw error;
     }
   };
@@ -76,19 +93,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password 
       });
       const { user, token } = response.data;
-      
+      if (!user || !token) {
+        throw new Error('Invalid response from server');
+      }
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', token);
-      
-      // Set the default authorization header
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      // Redirect to the page they tried to visit or home
       const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
-    } catch (error) {
-      console.error('Registration failed:', error);
+    } catch (error: any) {
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
+      alert('Registration failed: Email may already be in use, or server unavailable.');
       throw error;
     }
   };

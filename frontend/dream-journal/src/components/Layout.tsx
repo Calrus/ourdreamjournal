@@ -3,8 +3,10 @@
 import * as React from "react"
 import { ThemeProvider } from "./theme-provider"
 import { ThemeToggle } from "./theme-toggle"
+import { useAuth } from '../context/AuthContext'
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { user, logout } = useAuth();
   return (
     <ThemeProvider
       attribute="class"
@@ -23,6 +25,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
               <nav className="flex items-center">
                 <ThemeToggle />
+                {user && (
+                  <button
+                    onClick={logout}
+                    className="ml-4 px-3 py-1 rounded bg-destructive text-white hover:bg-destructive/80 transition-colors"
+                  >
+                    Logout
+                  </button>
+                )}
               </nav>
             </div>
           </div>

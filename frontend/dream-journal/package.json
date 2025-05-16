@@ -25,7 +25,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^2.30.0",
     "formik": "^2.4.5",
-    "framer-motion": "^11.18.2",
+    "framer-motion": "^12.12.1",
     "google-protobuf": "^3.21.2",
     "grpc-web": "^1.4.2",
     "lucide-react": "^0.510.0",

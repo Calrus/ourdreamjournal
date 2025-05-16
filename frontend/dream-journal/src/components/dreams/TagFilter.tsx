@@ -44,7 +44,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({ onFilter }) => {
     );
   }
 
-  if (tags.length === 0) {
+  if ((tags || []).length === 0) {
     return null;
   }
 
@@ -52,7 +52,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({ onFilter }) => {
     <div className="space-y-2">
       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by tags:</h3>
       <div className="flex flex-wrap gap-2">
-        {tags.map((tag) => (
+        {(tags || []).map((tag) => (
           <button
             key={tag.id}
             onClick={() => handleTagToggle(tag.id)}

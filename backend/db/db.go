@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-	"ourdreamjournal/config"
-	"github.com/pinecone-io/go-pinecone/v3/pinecone"
+	"github.com/Calrus/ourdreamjournal/backend/config"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // New creates a new database connection pool using the provided configuration
@@ -48,4 +47,4 @@ func Close(pool *pgxpool.Pool) {
 	if pool != nil {
 		pool.Close()
 	}
-} 
+}

@@ -22,8 +22,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, onRegisterClick }) => {
       email: Yup.string().email('Invalid email address').required('Required'),
       password: Yup.string().required('Required'),
     }),
-    onSubmit: (values) => {
-      onSubmit(values);
+    onSubmit: async (values, { setStatus, setSubmitting }) => {
+      setStatus(undefined);
+      try {
+        await onSubmit(values);
+      } catch (error) {
+        setStatus('Invalid email or password');
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
 
@@ -40,6 +47,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, onRegisterClick }) => {
             <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {formik.status && (
+              <div className="text-sm text-destructive text-center mb-2">{formik.status}</div>
+            )}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
                 Email
