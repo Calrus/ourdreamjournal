@@ -6,6 +6,8 @@ import { Badge } from '../ui/badge';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { format } from 'date-fns';
+import { Tag as TagIcon, Trash } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export function DreamDetail() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +21,8 @@ export function DreamDetail() {
   const [prophecy, setProphecy] = useState<string | null>(null);
   const [isProphesizing, setIsProphesizing] = useState(false);
   const [prophecyError, setProphecyError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchDream = async () => {
@@ -51,6 +55,8 @@ export function DreamDetail() {
       </div>
     );
   }
+
+  const canDelete = user && dream.userId === user.id;
 
   return (
     <motion.div
@@ -139,17 +145,54 @@ export function DreamDetail() {
         )}
       </div>
       <Card className="shadow-xl border bg-background mt-4">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 relative">
           <CardTitle className="text-2xl font-bold">Dream</CardTitle>
           {dream.public && <Badge variant="secondary">Public</Badge>}
+          {canDelete && (
+            <button
+              className="absolute top-0 right-0 p-2 text-red-500 hover:text-red-700"
+              title="Delete Dream"
+              disabled={isDeleting}
+              onClick={async () => {
+                if (!window.confirm('Are you sure you want to delete this dream? This cannot be undone.')) return;
+                setIsDeleting(true);
+                try {
+                  await client.deleteDream(dream.id);
+                  alert('Dream deleted successfully.');
+                  navigate('/');
+                } catch (e) {
+                  alert('Failed to delete dream.');
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+            >
+              {isDeleting ? (
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+              ) : (
+                <Trash className="w-5 h-5" />
+              )}
+            </button>
+          )}
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-2">
             {dream.createdAt ? format(new Date(dream.createdAt), 'MMM d, yyyy h:mm a') : ''}
           </p>
-          <div className="prose prose-base dark:prose-invert max-w-none whitespace-pre-line">
+          <div className="prose prose-base dark:prose-invert max-w-none whitespace-pre-line mb-2">
             {dream.text}
           </div>
+          {/* Tags row */}
+          {dream.tags && dream.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {dream.tags.map((tag) => (
+                <span key={tag} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded">
+                  <TagIcon className="w-3 h-3" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-end pt-4">
           <Button variant="outline" onClick={() => navigate(-1)}>

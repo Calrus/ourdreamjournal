@@ -8,6 +8,8 @@ import DreamForm from './components/dream/DreamForm';
 import { DreamList } from './components/dreams/DreamList';
 import { PublicDreamsPage } from './components/dreams/PublicDreamsPage';
 import { DreamDetail } from './components/dreams/DreamDetail';
+import { PublicProfilePage } from './components/dreams/PublicProfilePage';
+import { EditProfilePage } from './components/dreams/EditProfilePage';
 import { useAuth } from './context/AuthContext';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -72,6 +74,8 @@ const App: React.FC = () => {
               path="/dreams/:id"
               element={<DreamDetail />}
             />
+            <Route path="/users/:username" element={<PublicProfilePage />} />
+            <Route path="/profile" element={<EditProfilePage />} />
           </Routes>
     </ThemeProvider>
   );

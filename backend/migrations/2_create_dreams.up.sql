@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS dreams (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     public_id TEXT UNIQUE NOT NULL DEFAULT (substring(md5(random()::text) for 10)),
     summary TEXT,
-    prophecy TEXT
+    prophecy TEXT,
+    title TEXT
 );
 
 -- Backfill for existing rows (safe to run multiple times)

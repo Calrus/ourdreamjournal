@@ -6,13 +6,15 @@ import { format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { dreamService } from '../../services/dreamService';
 import { Badge } from '../ui/badge';
-import client from '../../api/client';
+import { Tag as TagIcon } from 'lucide-react';
 
 export function DreamList() {
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const [dreamTags, setDreamTags] = useState<Record<string, string[]>>({});
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // Collect all tags from dreams
+  const allTags = Array.from(new Set((dreams ?? []).flatMap((d) => d.tags || [])));
 
   useEffect(() => {
     const fetchDreams = async () => {
@@ -22,29 +24,26 @@ export function DreamList() {
         return;
       }
       try {
-        const data = await dreamService.listDreams(user.id);
-        setDreams(data);
-        const tagsMap: Record<string, string[]> = {};
-        await Promise.all(
-          data.map(async (dream) => {
-            try {
-              const tags = await client.getDreamTags(dream.id);
-              tagsMap[dream.id] = tags;
-            } catch {
-              tagsMap[dream.id] = [];
-            }
-          })
-        );
-        setDreamTags(tagsMap);
+        const data = await dreamService.listDreams(undefined, user.id);
+        setDreams((data ?? []).filter(d => d.userId === user.id));
       } catch (error) {
         console.error('Failed to fetch dreams:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchDreams();
   }, [user]);
+
+  const handleTagClick = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const filteredDreams = (dreams ?? []).filter((dream) =>
+    selectedTags.length === 0 || (dream.tags || []).some((tag) => selectedTags.includes(tag))
+  );
 
   if (isLoading) {
     return (
@@ -56,15 +55,18 @@ export function DreamList() {
 
   return (
     <div className="space-y-6">
-      {/* Button group for dashboard navigation */}
-      <div className="flex items-center gap-4 mb-4">
-        <Link
-          to="/public-dreams"
-          className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-        >
-          View Public Dreams
-        </Link>
-        {/* Add more buttons here in the future */}
+      {/* Tag Filter Bar */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {allTags.map((tag) => (
+          <button
+            key={tag}
+            className={`flex items-center gap-1 px-3 py-1 rounded-full border ${selectedTags.includes(tag) ? 'bg-primary text-white' : 'bg-background text-primary border-primary'} transition`}
+            onClick={() => handleTagClick(tag)}
+          >
+            <TagIcon className="w-4 h-4" />
+            {tag}
+          </button>
+        ))}
       </div>
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">My Dreams</h1>
@@ -76,7 +78,7 @@ export function DreamList() {
         </Link>
       </div>
 
-      {(dreams || []).length === 0 ? (
+      {(filteredDreams || []).length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center">
           <h3 className="text-lg font-medium">No dreams yet</h3>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -85,7 +87,7 @@ export function DreamList() {
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {(dreams || []).map((dream) => (
+          {(filteredDreams || []).map((dream) => (
             <motion.div
               key={dream.id}
               initial={{ opacity: 0, y: 20 }}
@@ -93,14 +95,18 @@ export function DreamList() {
               className="group relative rounded-lg border p-6 hover:border-primary"
             >
               <Link to={`/dreams/${dream.id}`}>
+                {/* Title as main heading */}
+                <h2 className="text-lg font-bold mb-2 truncate">{dream.title || (dream.text.length > 40 ? dream.text.slice(0, 40) + '...' : dream.text)}</h2>
                 <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-2">
                   {dream.text.length > 100 ? dream.text.slice(0, 100) + '...' : dream.text}
                 </p>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {(dreamTags[dream.id] || []).map((tag) => (
-                    <Badge key={tag} className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded">
+                {/* Tags row - below post, smaller */}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {(dream.tags || []).map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-1.5 py-0.5 rounded text-xs">
+                      <TagIcon className="w-3 h-3" />
                       {tag}
-                    </Badge>
+                    </span>
                   ))}
                 </div>
                 <p className="mt-4 text-xs text-muted-foreground">{format(new Date(dream.createdAt), 'MMM d, yyyy h:mm a')}</p>

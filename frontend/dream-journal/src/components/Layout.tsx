@@ -24,14 +24,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
               <nav className="flex items-center">
+                <a
+                  href="/public-dreams"
+                  className="mr-2 px-3 py-1 rounded border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  View Public Dreams
+                </a>
                 <ThemeToggle />
                 {user && (
-                  <button
-                    onClick={logout}
-                    className="ml-4 px-3 py-1 rounded bg-destructive text-white hover:bg-destructive/80 transition-colors"
+                  <a
+                    href="/profile"
+                    className="ml-4 px-3 py-1 rounded bg-primary text-white hover:bg-primary/80 transition-colors"
                   >
-                    Logout
-                  </button>
+                    {user.username}
+                  </a>
                 )}
               </nav>
             </div>

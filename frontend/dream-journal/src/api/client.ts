@@ -6,6 +6,9 @@ export interface User {
   id: string;
   email: string;
   username: string;
+  displayName?: string;
+  description?: string;
+  profileImageURL?: string;
   createdAt: number;
 }
 
@@ -21,10 +24,15 @@ export interface AuthResponse {
 export interface Dream {
   id: string;
   userId: string;
+  username?: string;
+  displayName?: string;
+  profileImageURL?: string;
+  title?: string;
   text: string;
   public: boolean;
   createdAt: string;
   updatedAt: string;
+  tags?: string[];
 }
 
 export interface Tag {
@@ -43,7 +51,8 @@ export interface Stats {
 
 export interface CreateDreamRequest {
   title: string;
-  content: string;
+  text: string;
+  public: boolean;
 }
 
 const client = {
@@ -95,6 +104,14 @@ const client = {
     return response.data;
   },
 
+  async deleteDream(id: string): Promise<void> {
+    await axios.delete(`${API_URL}/api/dreams/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+  },
+
   // Stats
   async getStats(userId: string): Promise<Stats> {
     const response = await axios.get<Stats>(`${API_URL}/api/users/${userId}/stats`, {
@@ -140,6 +157,24 @@ const client = {
       },
     });
     return response.data.tags;
+  },
+
+  async getPublicProfile(username: string): Promise<{ user: User; dreams: any[] }> {
+    const response = await axios.get(`${API_URL}/api/users/${username}/public`);
+    return response.data;
+  },
+
+  async getOwnProfile(): Promise<User> {
+    const response = await axios.get(`${API_URL}/api/users/me/profile`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    return response.data;
+  },
+
+  async updateOwnProfile(profile: { displayName: string; description: string; profileImageURL: string }): Promise<void> {
+    await axios.put(`${API_URL}/api/users/me/profile`, profile, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
   },
 };
 

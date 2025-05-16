@@ -10,7 +10,7 @@ import { dreamService } from '../../services/dreamService';
 import { useAuth } from '../../context/AuthContext';
 
 interface DreamFormProps {
-  onSubmit?: (values: { text: string; public: boolean }) => void;
+  onSubmit?: (values: { title: string; text: string; public: boolean }) => void;
 }
 
 const DreamForm: React.FC<DreamFormProps> = ({ onSubmit }) => {
@@ -19,10 +19,12 @@ const DreamForm: React.FC<DreamFormProps> = ({ onSubmit }) => {
 
   const formik = useFormik({
     initialValues: {
+      title: '',
       text: '',
       public: false,
     },
     validationSchema: Yup.object({
+      title: Yup.string().required('Title is required'),
       text: Yup.string().required('Required'),
       public: Yup.boolean(),
     }),
@@ -33,7 +35,7 @@ const DreamForm: React.FC<DreamFormProps> = ({ onSubmit }) => {
         }
 
         const dream = await dreamService.createDream({
-          userId: user.id,
+          title: values.title,
           text: values.text,
           public: values.public,
         });
@@ -67,6 +69,25 @@ const DreamForm: React.FC<DreamFormProps> = ({ onSubmit }) => {
             <CardTitle className="text-2xl text-center">Record Your Dream</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="title" className="text-sm font-medium">
+                Title
+              </label>
+              <input
+                id="title"
+                name="title"
+                type="text"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.title}
+                className={formik.touched.title && formik.errors.title ? 'border-destructive w-full rounded-md border px-3 py-2 text-sm' : 'w-full rounded-md border px-3 py-2 text-sm'}
+                placeholder="Give your dream a title"
+                required
+              />
+              {formik.touched.title && formik.errors.title && (
+                <div className="text-sm text-destructive">{formik.errors.title}</div>
+              )}
+            </div>
             <div className="space-y-2">
               <label htmlFor="text" className="text-sm font-medium">
                 Dream Description

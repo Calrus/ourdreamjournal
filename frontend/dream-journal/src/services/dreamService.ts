@@ -5,14 +5,19 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:50051';
 export interface Dream {
   id: string;
   userId: string;
+  username?: string;
+  displayName?: string;
+  profileImageURL?: string;
+  title?: string;
   text: string;
   public: boolean;
   createdAt: string;
   updatedAt: string;
+  tags?: string[];
 }
 
 export interface CreateDreamRequest {
-  userId: string;
+  title?: string;
   text: string;
   public: boolean;
 }
@@ -30,9 +35,12 @@ export const dreamService = {
     return response.data;
   },
 
-  async listDreams(userId: string, publicOnly: boolean = false): Promise<Dream[]> {
+  async listDreams(publicOnly?: boolean, userId?: string): Promise<Dream[]> {
+    const params: any = {};
+    if (publicOnly) params.public = true;
+    if (userId) params.userId = userId;
     const response = await axios.get(`${API_URL}/api/dreams`, {
-      params: { userId, public: publicOnly },
+      params,
       headers: getAuthHeader(),
     });
     return response.data;

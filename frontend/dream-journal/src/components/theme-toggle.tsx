@@ -13,10 +13,13 @@ export function ThemeToggle() {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="rounded-full p-2 hover:bg-accent hover:text-accent-foreground"
+      className="relative flex items-center justify-center rounded-full p-2 hover:bg-accent hover:text-accent-foreground"
+      style={{ width: 36, height: 36 }}
     >
-      <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="relative block w-5 h-5">
+        <Sun className="absolute inset-0 h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+        <Moon className="absolute inset-0 h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      </span>
       <span className="sr-only">Toggle theme</span>
     </motion.button>
   )
