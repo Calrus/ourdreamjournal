@@ -9,7 +9,10 @@ COPY package.json package-lock.json ./
 # 1) reproducible install
 RUN npm ci
 
-# 2) debug: make sure axios is installed
+# 2) safety net: ensure axios is installed
+RUN npm install axios
+
+# 3) debug: show axios in tree
 RUN npm ls axios
 
 COPY . .
