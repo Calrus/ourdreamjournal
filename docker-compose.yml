@@ -51,6 +51,9 @@ services:
     build:
       context: ./frontend/dream-journal
       dockerfile: Dockerfile
+      # Always build without cache
+      # This is not a standard docker-compose option, but you can use the command line:
+      # docker-compose build --no-cache frontend
     ports:
       - "80:80"
     depends_on:
