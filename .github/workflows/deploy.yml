@@ -20,6 +20,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.VM_SSH_KEY }}
 
+      - name: Check frontend dependencies
+        run: |
+          cd frontend/dream-journal
+          npm ci
+
       - name: Deploy to VM
         run: |
           ssh -o StrictHostKeyChecking=no \
