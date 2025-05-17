@@ -3,10 +3,16 @@ FROM node:18 AS build
 
 WORKDIR /app
 
+# Copy dependency files first for better Docker cache
 COPY package.json package-lock.json ./
-RUN npm install
 
+# Clean install dependencies (fail if lock file is out of sync)
+RUN npm ci
+
+# Copy the rest of the app
 COPY . .
+
+# Build the app
 RUN npm run build
 
 # Use Nginx to serve the build
