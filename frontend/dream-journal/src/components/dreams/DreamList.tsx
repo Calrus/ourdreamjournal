@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { dreamService } from '../../services/dreamService';
 import { Badge } from '../ui/badge';
 import { Tag as TagIcon } from 'lucide-react';
+import { DreamCalendar } from '../stats/DreamCalendar';
 
 export function DreamList() {
   const [dreams, setDreams] = useState<Dream[]>([]);
@@ -15,6 +16,9 @@ export function DreamList() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   // Collect all tags from dreams
   const allTags = Array.from(new Set((dreams ?? []).flatMap((d) => d.tags || [])));
+
+  // Extract dream dates for the calendar
+  const dreamDates = dreams.map((d) => d.createdAt.slice(0, 10));
 
   useEffect(() => {
     const fetchDreams = async () => {
@@ -55,6 +59,8 @@ export function DreamList() {
 
   return (
     <div className="space-y-6">
+      {/* Dream Calendar */}
+      {dreamDates.length > 0 && <DreamCalendar dreamDates={dreamDates} />}
       {/* Tag Filter Bar */}
       <div className="flex flex-wrap gap-2 mb-4">
         {allTags.map((tag) => (

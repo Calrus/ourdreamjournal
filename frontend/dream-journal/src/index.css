@@ -70,3 +70,25 @@
     @apply text-base leading-relaxed;
   }
 }
+
+/* Dark mode overrides for react-calendar */
+.dark .react-calendar {
+  background-color: #18181b !important; /* zinc-900 */
+  color: #f3f4f6 !important;           /* gray-100 */
+  border-color: #27272a !important;    /* zinc-800 */
+}
+.dark .react-calendar__tile {
+  background: transparent !important;
+  color: #f3f4f6 !important;
+}
+.dark .react-calendar__tile--active,
+.dark .react-calendar__tile--now {
+  background: #2563eb !important;      /* blue-600 */
+  color: #fff !important;
+}
+.dark .react-calendar__navigation button {
+  color: #f3f4f6 !important;
+}
+.dark .react-calendar__month-view__days__day--weekend {
+  color: #60a5fa !important;           /* blue-400 */
+}

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import client, { Stats } from '../../api/client';
+import client, { Stats, Dream } from '../../api/client';
 import { Badge } from '../ui/badge';
+import { DreamCalendar } from './DreamCalendar';
 
 export const StatsDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -10,6 +11,8 @@ export const StatsDashboard: React.FC = () => {
   const [aiInsights, setAiInsights] = useState<any[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [dreamDates, setDreamDates] = useState<string[]>([]);
+  const [dreamsLoading, setDreamsLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -45,6 +48,25 @@ export const StatsDashboard: React.FC = () => {
       .finally(() => setAiLoading(false));
   }, [user]);
 
+  useEffect(() => {
+    const fetchDreams = async () => {
+      if (!user) return;
+      setDreamsLoading(true);
+      try {
+        const dreams: Dream[] = await client.getDreams();
+        // Only include dreams belonging to the current user (if needed)
+        const userDreams = dreams.filter((d) => d.userId === user.id);
+        // Extract just the date part (YYYY-MM-DD) for each dream
+        setDreamDates(userDreams.map((d) => d.createdAt.slice(0, 10)));
+      } catch (error) {
+        setDreamDates([]);
+      } finally {
+        setDreamsLoading(false);
+      }
+    };
+    fetchDreams();
+  }, [user]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -60,6 +82,11 @@ export const StatsDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dream Statistics</h1>
+
+      {/* Dream Calendar */}
+      {!dreamsLoading && dreamDates.length > 0 && (
+        <DreamCalendar dreamDates={dreamDates} />
+      )}
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-lg border bg-card p-6">
