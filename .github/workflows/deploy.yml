@@ -1,28 +1,31 @@
+# .github/workflows/deploy.yml
 name: CI/CD — Deploy to GCE VM
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up SSH agent
-      uses: webfactory/ssh-agent@v0.8.1
-      with:
-        ssh-private-key: ${{ secrets.VM_SSH_KEY }}
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.VM_SSH_KEY }}
 
-    - name: Deploy to VM
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_SSH_HOST }} << 'EOF'
-          cd /srv/ourdreamjournal
-          git pull origin main
-          docker-compose pull
-          docker-compose up -d --build
-          # optional: docker image prune -f
-        EOF
+      - name: Deploy to VM
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_SSH_HOST }} << 'EOF'
+            cd /srv/ourdreamjournal
+            git pull origin main
+            docker-compose pull
+            docker-compose up -d --build
+            # Optional: clean up dangling images
+            docker image prune -f
+          EOF
