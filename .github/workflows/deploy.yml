@@ -9,7 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: DreamJournal     # ← load secrets from your DreamJournal environment
+    environment: DreamJournal    # load env-scoped secrets
 
     steps:
       - name: Checkout code
@@ -22,10 +22,18 @@ jobs:
 
       - name: Deploy to VM
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_SSH_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no \
+              ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_SSH_HOST }} << 'EOF'
+            # Mark the repo as safe for git pulls
+            git config --global --add safe.directory /srv/ourdreamjournal
+
             cd /srv/ourdreamjournal
             git pull origin main
+
+            # Update & restart containers
             docker-compose pull
             docker-compose up -d --build
+
+            # Clean up old images
             docker image prune -f
           EOF
