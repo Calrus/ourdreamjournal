@@ -6,14 +6,15 @@ WORKDIR /app
 # Copy dependency files first for better Docker cache
 COPY package.json package-lock.json ./
 
-# Clean install dependencies (fail if lock file is out of sync)
+# 1) reproducible install
 RUN npm ci
 
-# Copy the rest of the app
-COPY . .
+# 2) debug: make sure axios is installed
+RUN npm ls axios
 
-# Build the app
+COPY . .
 RUN npm run build
+
 
 # Use Nginx to serve the build
 FROM nginx:alpine
