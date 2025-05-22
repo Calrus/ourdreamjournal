@@ -34,7 +34,7 @@ const DreamForm: React.FC<DreamFormProps> = ({ onSubmit }) => {
           throw new Error('User not authenticated');
         }
 
-        const dream = await dreamService.createDream({
+        await dreamService.createDream({
           title: values.title,
           text: values.text,
           public: values.public,

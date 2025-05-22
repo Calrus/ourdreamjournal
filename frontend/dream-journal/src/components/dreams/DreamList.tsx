@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Dream } from '../../api/client';
 import { format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { dreamService } from '../../services/dreamService';
-import { Badge } from '../ui/badge';
 import { Tag as TagIcon } from 'lucide-react';
 import { DreamCalendar } from '../stats/DreamCalendar';
 

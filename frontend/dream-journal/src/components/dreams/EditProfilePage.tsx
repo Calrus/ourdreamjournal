@@ -3,7 +3,6 @@ import client from '../../api/client';
 import { Avatar } from '../ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../ui/button';
 
 export function EditProfilePage() {
   const [profile, setProfile] = useState<any>(null);

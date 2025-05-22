@@ -6,7 +6,7 @@ import { ThemeToggle } from "./theme-toggle"
 import { useAuth } from '../context/AuthContext'
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   return (
     <ThemeProvider
       attribute="class"

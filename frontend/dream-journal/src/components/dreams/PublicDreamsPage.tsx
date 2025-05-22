@@ -5,7 +5,6 @@ import { dreamService, Dream } from '../../services/dreamService';
 import { format } from 'date-fns';
 import { Tag as TagIcon, ArrowLeft } from 'lucide-react';
 import { Avatar } from '../ui/avatar';
-import client from '../../api/client';
 
 export function PublicDreamsPage() {
   const [dreams, setDreams] = useState<Dream[]>([]);
