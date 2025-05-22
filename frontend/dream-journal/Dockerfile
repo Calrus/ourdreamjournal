@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Copy dependency files first for better Docker cache
 COPY package.json package-lock.json ./
+COPY .env .env
 
 # 1) reproducible install
 RUN npm ci
