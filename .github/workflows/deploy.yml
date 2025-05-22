@@ -22,7 +22,7 @@ jobs:
 
       - name: Set up frontend .env
         run: |
-          echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" > frontend/dream-journal/.env
+          echo "REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}" > frontend/dream-journal/.env
 
       - name: Check frontend dependencies
         run: |
@@ -43,6 +43,9 @@ jobs:
 
             cd /srv/ourdreamjournal
             git pull origin main
+
+            # Create .env for frontend
+            echo "REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}" > frontend/dream-journal/.env
 
             # Update & restart containers
             docker-compose pull
