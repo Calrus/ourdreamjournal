@@ -32,7 +32,7 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend/dream-journal
-          npm run build
+          CI=false npm run build
 
       - name: Deploy to VM
         run: |
