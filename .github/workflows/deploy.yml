@@ -20,6 +20,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.VM_SSH_KEY }}
 
+      # FRONTEND BUILD IN CI
       - name: Set up frontend .env
         run: |
           echo "REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}" > frontend/dream-journal/.env
@@ -34,22 +35,23 @@ jobs:
           cd frontend/dream-journal
           CI=false npm run build
 
-      - name: Deploy to VM
+      # COPY FRONTEND BUILD TO VM
+      - name: Copy frontend build to VM
+        run: |
+          scp -o StrictHostKeyChecking=no -r frontend/dream-journal/build ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_SSH_HOST }}:/srv/ourdreamjournal/frontend/dream-journal/
+
+      # BACKEND DEPLOYMENT (Docker Compose)
+      - name: Deploy backend and services to VM
         run: |
           ssh -o StrictHostKeyChecking=no \
               ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_SSH_HOST }} << 'EOF'
-            # Mark the repo as safe for git pulls
             git config --global --add safe.directory /srv/ourdreamjournal
-
             cd /srv/ourdreamjournal
             git pull origin main
 
-            # Create .env for frontend
-            echo "REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}" > frontend/dream-journal/.env
-
-            # Update & restart containers
+            # Update & restart backend and other containers (not frontend)
             docker-compose pull
-            docker-compose up -d --build --no-cache
+            docker-compose up -d --build --no-cache backend migrate postgres
 
             # Clean up old images
             docker image prune -f
