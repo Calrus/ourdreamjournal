@@ -49,9 +49,9 @@ jobs:
             cd /srv/ourdreamjournal
             git pull origin main
 
-            # Update & restart backend and other containers (not frontend)
-            docker-compose pull
-            docker-compose up -d --build --no-cache backend migrate postgres
+            # Correctly rebuild backend image without cache, then start backend and other services
+            docker-compose build --no-cache backend
+            docker-compose up -d backend migrate postgres
 
             # Clean up old images
             docker image prune -f
