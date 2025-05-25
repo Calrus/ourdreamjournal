@@ -13,6 +13,7 @@ export const StatsDashboard: React.FC = () => {
   const [aiError, setAiError] = useState<string | null>(null);
   const [dreamDates, setDreamDates] = useState<string[]>([]);
   const [dreamsLoading, setDreamsLoading] = useState(true);
+  const [dreams, setDreams] = useState<Dream[]>([]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -54,18 +55,48 @@ export const StatsDashboard: React.FC = () => {
       setDreamsLoading(true);
       try {
         const dreams: Dream[] = await client.getDreams();
-        // Only include dreams belonging to the current user (if needed)
         const userDreams = dreams.filter((d) => d.userId === user.id);
-        // Extract just the date part (YYYY-MM-DD) for each dream
         setDreamDates(userDreams.map((d) => d.createdAt.slice(0, 10)));
+        setDreams(userDreams);
       } catch (error) {
         setDreamDates([]);
+        setDreams([]);
       } finally {
         setDreamsLoading(false);
       }
     };
     fetchDreams();
   }, [user]);
+
+  // Aggregate ratings
+  function avg(arr: (number | undefined)[]) {
+    const nums = arr.filter((n): n is number => typeof n === 'number');
+    if (!nums.length) return null;
+    return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
+  }
+  const nightmareAvg = avg(dreams.map(d => d.nightmare_rating));
+  const vividnessAvg = avg(dreams.map(d => d.vividness_rating));
+  const clarityAvg = avg(dreams.map(d => d.clarity_rating));
+  const emotionalAvg = avg(dreams.map(d => d.emotional_intensity_rating));
+
+  // Simple histogram/bar for each rating (1-10)
+  function ratingHistogram(key: keyof Dream) {
+    const counts = Array(10).fill(0);
+    dreams.forEach(d => {
+      const val = d[key] as number | undefined;
+      if (typeof val === 'number' && val >= 1 && val <= 10) counts[val - 1]++;
+    });
+    return (
+      <div className="flex items-end gap-1 h-12 mt-2">
+        {counts.map((count, i) => (
+          <div key={i} className="flex flex-col items-center">
+            <div className="bg-blue-500 dark:bg-blue-300 w-3" style={{ height: `${count * 8}px` }}></div>
+            <span className="text-xs text-muted-foreground">{i + 1}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -102,6 +133,33 @@ export const StatsDashboard: React.FC = () => {
         <div className="rounded-lg border bg-card p-6">
           <h3 className="text-lg font-medium">Private Dreams</h3>
           <p className="mt-2 text-3xl font-bold">{stats.privateDreams}</p>
+        </div>
+      </div>
+
+      {/* Ratings Averages and Histograms */}
+      <div className="rounded-lg border bg-card p-6">
+        <h3 className="text-lg font-medium mb-4">Dream Ratings</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div>
+            <div className="font-semibold">Nightmare → Great Dream</div>
+            <div className="text-2xl font-bold">{nightmareAvg ?? '—'}</div>
+            {ratingHistogram('nightmare_rating')}
+          </div>
+          <div>
+            <div className="font-semibold">Vividness</div>
+            <div className="text-2xl font-bold">{vividnessAvg ?? '—'}</div>
+            {ratingHistogram('vividness_rating')}
+          </div>
+          <div>
+            <div className="font-semibold">Clarity</div>
+            <div className="text-2xl font-bold">{clarityAvg ?? '—'}</div>
+            {ratingHistogram('clarity_rating')}
+          </div>
+          <div>
+            <div className="font-semibold">Emotional Intensity</div>
+            <div className="text-2xl font-bold">{emotionalAvg ?? '—'}</div>
+            {ratingHistogram('emotional_intensity_rating')}
+          </div>
         </div>
       </div>
 

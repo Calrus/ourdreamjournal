@@ -56,23 +56,31 @@ type LoginRequest struct {
 }
 
 type Dream struct {
-	ID              string    `json:"id"`
-	UserID          string    `json:"userId"`
-	Username        string    `json:"username"`
-	DisplayName     string    `json:"displayName"`
-	ProfileImageURL string    `json:"profileImageURL"`
-	Title           string    `json:"title"`
-	Text            string    `json:"text"`
-	Public          bool      `json:"public"`
-	CreatedAt       time.Time `json:"createdAt"`
-	UpdatedAt       time.Time `json:"updatedAt"`
-	Tags            []string  `json:"tags,omitempty"`
+	ID                       string    `json:"id"`
+	UserID                   string    `json:"userId"`
+	Username                 string    `json:"username"`
+	DisplayName              string    `json:"displayName"`
+	ProfileImageURL          string    `json:"profileImageURL"`
+	Title                    string    `json:"title"`
+	Text                     string    `json:"text"`
+	Public                   bool      `json:"public"`
+	CreatedAt                time.Time `json:"createdAt"`
+	UpdatedAt                time.Time `json:"updatedAt"`
+	Tags                     []string  `json:"tags,omitempty"`
+	NightmareRating          *int      `json:"nightmare_rating,omitempty"`
+	VividnessRating          *int      `json:"vividness_rating,omitempty"`
+	ClarityRating            *int      `json:"clarity_rating,omitempty"`
+	EmotionalIntensityRating *int      `json:"emotional_intensity_rating,omitempty"`
 }
 
 type CreateDreamRequest struct {
-	Title  string `json:"title"`
-	Text   string `json:"text"`
-	Public bool   `json:"public"`
+	Title                    string `json:"title"`
+	Text                     string `json:"text"`
+	Public                   bool   `json:"public"`
+	NightmareRating          *int   `json:"nightmare_rating,omitempty"`
+	VividnessRating          *int   `json:"vividness_rating,omitempty"`
+	ClarityRating            *int   `json:"clarity_rating,omitempty"`
+	EmotionalIntensityRating *int   `json:"emotional_intensity_rating,omitempty"`
 }
 
 // In-memory storage for dreams
@@ -248,6 +256,17 @@ func main() {
 				http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
 				return
 			}
+			// Validate ratings (if present)
+			validateRating := func(val *int) bool {
+				if val == nil {
+					return true
+				}
+				return *val >= 1 && *val <= 10
+			}
+			if !validateRating(req.NightmareRating) || !validateRating(req.VividnessRating) || !validateRating(req.ClarityRating) || !validateRating(req.EmotionalIntensityRating) {
+				http.Error(w, "All ratings must be between 1 and 10", http.StatusBadRequest)
+				return
+			}
 			now := time.Now()
 			var dreamID int
 			var shortcode string
@@ -268,15 +287,16 @@ func main() {
 					break
 				}
 			}
+			// Insert with new ratings fields
 			err = dbpool.QueryRow(context.Background(),
-				"INSERT INTO dreams (user_id, title, text, public, created_at, updated_at, public_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+				"INSERT INTO dreams (user_id, title, text, public, created_at, updated_at, public_id, nightmare_rating, vividness_rating, clarity_rating, emotional_intensity_rating) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
 				userID, req.Title, req.Text, req.Public, now, now, shortcode,
+				req.NightmareRating, req.VividnessRating, req.ClarityRating, req.EmotionalIntensityRating,
 			).Scan(&dreamID)
 			if err != nil {
 				http.Error(w, "Failed to create dream", http.StatusInternalServerError)
 				return
 			}
-
 			// After saving the dream, call OpenAI to extract tags
 			tags := []string{}
 			apiKey := os.Getenv("OPENAI_API_KEY")
@@ -300,18 +320,20 @@ func main() {
 					}
 				}
 			}
-
 			dream := Dream{
-				ID:        shortcode, // Use shortcode as ID for frontend
-				UserID:    userID,
-				Title:     req.Title,
-				Text:      req.Text,
-				Public:    req.Public,
-				CreatedAt: now,
-				UpdatedAt: now,
-				Tags:      tags,
+				ID:                       shortcode, // Use shortcode as ID for frontend
+				UserID:                   userID,
+				Title:                    req.Title,
+				Text:                     req.Text,
+				Public:                   req.Public,
+				CreatedAt:                now,
+				UpdatedAt:                now,
+				Tags:                     tags,
+				NightmareRating:          req.NightmareRating,
+				VividnessRating:          req.VividnessRating,
+				ClarityRating:            req.ClarityRating,
+				EmotionalIntensityRating: req.EmotionalIntensityRating,
 			}
-
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(dream)
 
@@ -324,26 +346,26 @@ func main() {
 			if userID != "" {
 				if publicOnly {
 					rows, err = dbpool.Query(context.Background(),
-						`SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at
+						`SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at, d.nightmare_rating, d.vividness_rating, d.clarity_rating, d.emotional_intensity_rating
 						 FROM dreams d
 						 JOIN users u ON d.user_id = u.id
 						 WHERE d.user_id=$1 AND d.public=TRUE`, userID)
 				} else {
 					rows, err = dbpool.Query(context.Background(),
-						`SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at
+						`SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at, d.nightmare_rating, d.vividness_rating, d.clarity_rating, d.emotional_intensity_rating
 						 FROM dreams d
 						 JOIN users u ON d.user_id = u.id
 						 WHERE d.user_id=$1`, userID)
 				}
 			} else if publicOnly {
 				rows, err = dbpool.Query(context.Background(),
-					`SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at
+					`SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at, d.nightmare_rating, d.vividness_rating, d.clarity_rating, d.emotional_intensity_rating
 					 FROM dreams d
 					 JOIN users u ON d.user_id = u.id
 					 WHERE d.public=TRUE`)
 			} else {
 				rows, err = dbpool.Query(context.Background(),
-					`SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at
+					`SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at, d.nightmare_rating, d.vividness_rating, d.clarity_rating, d.emotional_intensity_rating
 					 FROM dreams d
 					 JOIN users u ON d.user_id = u.id`)
 			}
@@ -361,7 +383,8 @@ func main() {
 				var public bool
 				var createdAt, updatedAt time.Time
 				var dreamRowId int
-				if err := rows.Scan(&publicID, &userID, &username, &displayName, &profileImageURL, &title, &text, &public, &createdAt, &updatedAt); err != nil {
+				var nightmareRating, vividnessRating, clarityRating, emotionalIntensityRating sql.NullInt32
+				if err := rows.Scan(&publicID, &userID, &username, &displayName, &profileImageURL, &title, &text, &public, &createdAt, &updatedAt, &nightmareRating, &vividnessRating, &clarityRating, &emotionalIntensityRating); err != nil {
 					http.Error(w, "Failed to scan dream", http.StatusInternalServerError)
 					return
 				}
@@ -390,6 +413,22 @@ func main() {
 					CreatedAt:       createdAt,
 					UpdatedAt:       updatedAt,
 					Tags:            tags,
+				}
+				if nightmareRating.Valid {
+					val := int(nightmareRating.Int32)
+					d.NightmareRating = &val
+				}
+				if vividnessRating.Valid {
+					val := int(vividnessRating.Int32)
+					d.VividnessRating = &val
+				}
+				if clarityRating.Valid {
+					val := int(clarityRating.Int32)
+					d.ClarityRating = &val
+				}
+				if emotionalIntensityRating.Valid {
+					val := int(emotionalIntensityRating.Int32)
+					d.EmotionalIntensityRating = &val
 				}
 				dreams = append(dreams, d)
 			}
@@ -434,10 +473,11 @@ func main() {
 		var d Dream
 		var id int
 		var createdAt, updatedAt time.Time
+		var nightmareRating, vividnessRating, clarityRating, emotionalIntensityRating sql.NullInt32
 		err := dbpool.QueryRow(context.Background(),
-			"SELECT id, user_id, title, text, public, created_at, updated_at FROM dreams WHERE public_id=$1",
+			"SELECT id, user_id, title, text, public, created_at, updated_at, nightmare_rating, vividness_rating, clarity_rating, emotional_intensity_rating FROM dreams WHERE public_id=$1",
 			publicID,
-		).Scan(&id, &d.UserID, &d.Title, &d.Text, &d.Public, &createdAt, &updatedAt)
+		).Scan(&id, &d.UserID, &d.Title, &d.Text, &d.Public, &createdAt, &updatedAt, &nightmareRating, &vividnessRating, &clarityRating, &emotionalIntensityRating)
 		if err != nil {
 			http.Error(w, "Dream not found", http.StatusNotFound)
 			return
@@ -445,6 +485,22 @@ func main() {
 		d.ID = publicID
 		d.CreatedAt = createdAt
 		d.UpdatedAt = updatedAt
+		if nightmareRating.Valid {
+			val := int(nightmareRating.Int32)
+			d.NightmareRating = &val
+		}
+		if vividnessRating.Valid {
+			val := int(vividnessRating.Int32)
+			d.VividnessRating = &val
+		}
+		if clarityRating.Valid {
+			val := int(clarityRating.Int32)
+			d.ClarityRating = &val
+		}
+		if emotionalIntensityRating.Valid {
+			val := int(emotionalIntensityRating.Int32)
+			d.EmotionalIntensityRating = &val
+		}
 		// Fetch tags
 		tags := []string{}
 		tagRows, err := dbpool.Query(context.Background(), "SELECT tag FROM dream_tags WHERE dream_id=$1", id)

@@ -14,12 +14,20 @@ export interface Dream {
   createdAt: string;
   updatedAt: string;
   tags?: string[];
+  nightmare_rating?: number;
+  vividness_rating?: number;
+  clarity_rating?: number;
+  emotional_intensity_rating?: number;
 }
 
 export interface CreateDreamRequest {
   title?: string;
   text: string;
   public: boolean;
+  nightmare_rating?: number;
+  vividness_rating?: number;
+  clarity_rating?: number;
+  emotional_intensity_rating?: number;
 }
 
 const getAuthHeader = () => {

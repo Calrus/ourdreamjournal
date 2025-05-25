@@ -182,6 +182,25 @@ export function DreamDetail() {
           <div className="prose prose-base dark:prose-invert max-w-none whitespace-pre-line mb-2">
             {dream.text}
           </div>
+          {/* Ratings display */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+            <div>
+              <span className="font-medium">Nightmare → Great Dream:</span>
+              <span className="ml-2">{dream.nightmare_rating ?? '—'} / 10</span>
+            </div>
+            <div>
+              <span className="font-medium">Vividness:</span>
+              <span className="ml-2">{dream.vividness_rating ?? '—'} / 10</span>
+            </div>
+            <div>
+              <span className="font-medium">Clarity:</span>
+              <span className="ml-2">{dream.clarity_rating ?? '—'} / 10</span>
+            </div>
+            <div>
+              <span className="font-medium">Emotional Intensity:</span>
+              <span className="ml-2">{dream.emotional_intensity_rating ?? '—'} / 10</span>
+            </div>
+          </div>
           {/* Tags row */}
           {dream.tags && dream.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">

@@ -40,6 +40,12 @@ message Dream {
   string text = 3;
   int64 timestamp = 4;  // Unix timestamp
   bool public = 5;
+  string title = 11;
+  // Ratings (1-10)
+  int32 nightmare_rating = 12; // 1 = nightmare, 10 = great dream
+  int32 vividness_rating = 13; // 1 = not vivid, 10 = extremely vivid
+  int32 clarity_rating = 14;   // 1 = foggy, 10 = crystal clear
+  int32 emotional_intensity_rating = 15; // 1 = flat, 10 = intense
 }
 
 // DreamRequest is used to create a new dream entry
@@ -47,6 +53,12 @@ message DreamRequest {
   string user_id = 1;
   string text = 2;
   bool public = 3;
+  string title = 11;
+  // Ratings (1-10)
+  int32 nightmare_rating = 12;
+  int32 vividness_rating = 13;
+  int32 clarity_rating = 14;
+  int32 emotional_intensity_rating = 15;
 }
 
 // DreamResponse is returned after creating a dream
