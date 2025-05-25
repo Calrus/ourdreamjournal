@@ -23,7 +23,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 	"github.com/sashabaranov/go-openai"
 	"golang.org/x/crypto/bcrypt"
@@ -105,7 +104,6 @@ func generateShortcode(length int) (string, error) {
 }
 
 func main() {
-	_ = godotenv.Load(".env") // Load environment variables from .env file if present
 	cfg, err := config.New()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
