@@ -25,7 +25,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <nav className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold">Dream Journal</h1>
+            <h1 className="text-xl font-bold">SleepTalk</h1>
             <div className="hidden md:flex md:gap-6">
               {navItems.map((item) => (
                 <a

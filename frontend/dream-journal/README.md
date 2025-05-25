@@ -1,4 +1,4 @@
-# Dream Journal Frontend
+# SleepTalk Frontend
 
 A modern, responsive web application for recording and managing dream entries. Built with React, TypeScript, and Tailwind CSS.
 

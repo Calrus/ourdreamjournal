@@ -1,6 +1,6 @@
-# Our Dream Journal
+# SleepTalk
 
-Our Dream Journal is a modern, full-stack web application for recording, exploring, and sharing dreams. It features a Go backend, a React/TypeScript frontend, and AI-powered insights. The app is designed for privacy, creativity, and community sharing.
+SleepTalk is a modern, full-stack web application for recording, exploring, and sharing dreams. It features a Go backend, a React/TypeScript frontend, and AI-powered insights. The app is designed for privacy, creativity, and community sharing.
 
 ## Features
 
