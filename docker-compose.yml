@@ -41,6 +41,7 @@ services:
       POSTGRES_PASSWORD: dreamjournal
       POSTGRES_DB: dreamjournal
       POSTGRES_HOST: postgres
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
     volumes:
       - ./backend/migrations:/migrations
     depends_on:

@@ -50,6 +50,7 @@ jobs:
             git pull origin main
 
             # Correctly rebuild backend image without cache, then start backend and other services
+            export OPENAI_API_KEY="${{ secrets.OPENAI_KEY }}"
             docker-compose build --no-cache backend
             docker-compose up -d backend migrate postgres
 
