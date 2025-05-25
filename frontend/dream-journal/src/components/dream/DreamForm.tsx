@@ -22,11 +22,19 @@ const DreamForm: React.FC<DreamFormProps> = ({ onSubmit }) => {
       title: '',
       text: '',
       public: false,
+      nightmare_rating: 5,
+      vividness_rating: 5,
+      clarity_rating: 5,
+      emotional_intensity_rating: 5,
     },
     validationSchema: Yup.object({
       title: Yup.string().required('Title is required'),
       text: Yup.string().required('Required'),
       public: Yup.boolean(),
+      nightmare_rating: Yup.number().min(1).max(10).required(),
+      vividness_rating: Yup.number().min(1).max(10).required(),
+      clarity_rating: Yup.number().min(1).max(10).required(),
+      emotional_intensity_rating: Yup.number().min(1).max(10).required(),
     }),
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       try {
@@ -38,6 +46,10 @@ const DreamForm: React.FC<DreamFormProps> = ({ onSubmit }) => {
           title: values.title,
           text: values.text,
           public: values.public,
+          nightmare_rating: values.nightmare_rating,
+          vividness_rating: values.vividness_rating,
+          clarity_rating: values.clarity_rating,
+          emotional_intensity_rating: values.emotional_intensity_rating,
         });
 
         if (onSubmit) {
@@ -105,6 +117,102 @@ const DreamForm: React.FC<DreamFormProps> = ({ onSubmit }) => {
               {formik.touched.text && formik.errors.text && (
                 <div className="text-sm text-destructive">{formik.errors.text}</div>
               )}
+            </div>
+
+            {/* Ratings sliders */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="nightmare_rating" className="block text-sm font-medium mb-1">
+                  Nightmare → Great Dream
+                </label>
+                <input
+                  type="range"
+                  id="nightmare_rating"
+                  name="nightmare_rating"
+                  min={1}
+                  max={10}
+                  value={formik.values.nightmare_rating}
+                  onChange={formik.handleChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Nightmare (1)</span>
+                  <span>Great (10)</span>
+                </div>
+                <div className="text-center text-sm font-semibold mt-1">{formik.values.nightmare_rating}</div>
+                {formik.touched.nightmare_rating && formik.errors.nightmare_rating && (
+                  <div className="text-sm text-destructive">{formik.errors.nightmare_rating}</div>
+                )}
+              </div>
+              <div>
+                <label htmlFor="vividness_rating" className="block text-sm font-medium mb-1">
+                  Vividness
+                </label>
+                <input
+                  type="range"
+                  id="vividness_rating"
+                  name="vividness_rating"
+                  min={1}
+                  max={10}
+                  value={formik.values.vividness_rating}
+                  onChange={formik.handleChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Not vivid (1)</span>
+                  <span>Extremely vivid (10)</span>
+                </div>
+                <div className="text-center text-sm font-semibold mt-1">{formik.values.vividness_rating}</div>
+                {formik.touched.vividness_rating && formik.errors.vividness_rating && (
+                  <div className="text-sm text-destructive">{formik.errors.vividness_rating}</div>
+                )}
+              </div>
+              <div>
+                <label htmlFor="clarity_rating" className="block text-sm font-medium mb-1">
+                  Clarity
+                </label>
+                <input
+                  type="range"
+                  id="clarity_rating"
+                  name="clarity_rating"
+                  min={1}
+                  max={10}
+                  value={formik.values.clarity_rating}
+                  onChange={formik.handleChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Foggy (1)</span>
+                  <span>Crystal clear (10)</span>
+                </div>
+                <div className="text-center text-sm font-semibold mt-1">{formik.values.clarity_rating}</div>
+                {formik.touched.clarity_rating && formik.errors.clarity_rating && (
+                  <div className="text-sm text-destructive">{formik.errors.clarity_rating}</div>
+                )}
+              </div>
+              <div>
+                <label htmlFor="emotional_intensity_rating" className="block text-sm font-medium mb-1">
+                  Emotional Intensity
+                </label>
+                <input
+                  type="range"
+                  id="emotional_intensity_rating"
+                  name="emotional_intensity_rating"
+                  min={1}
+                  max={10}
+                  value={formik.values.emotional_intensity_rating}
+                  onChange={formik.handleChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Flat (1)</span>
+                  <span>Intense (10)</span>
+                </div>
+                <div className="text-center text-sm font-semibold mt-1">{formik.values.emotional_intensity_rating}</div>
+                {formik.touched.emotional_intensity_rating && formik.errors.emotional_intensity_rating && (
+                  <div className="text-sm text-destructive">{formik.errors.emotional_intensity_rating}</div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center space-x-2">
