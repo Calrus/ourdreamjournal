@@ -769,6 +769,7 @@ func main() {
 		}
 		_, err = dbpool.Exec(context.Background(), "INSERT INTO friends (user_id, friend_id, status) VALUES ($1, $2, 'pending') ON CONFLICT (user_id, friend_id) DO NOTHING", req.UserID, req.FriendID)
 		if err != nil {
+			log.Printf("[FRIEND REQUEST ERROR] userID=%v friendID=%v error=%v", req.UserID, req.FriendID, err)
 			http.Error(w, "Failed to send friend request", http.StatusInternalServerError)
 			return
 		}

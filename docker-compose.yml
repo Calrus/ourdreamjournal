@@ -34,7 +34,7 @@ services:
     environment:
       DATABASE_URL: "postgres://dreamjournal:dreamjournal@postgres:5432/dreamjournal?sslmode=disable"
       PORT: "50051"
-      # RESET_DB: "true"   # Uncomment to reset the database on next up
+      RESET_DB: "true"   # Uncomment to reset the database on next up
       POSTGRES_USER: dreamjournal
       POSTGRES_PASSWORD: dreamjournal
       POSTGRES_DB: dreamjournal
