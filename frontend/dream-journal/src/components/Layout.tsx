@@ -28,7 +28,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   href="/public-dreams"
                   className="mr-2 px-3 py-1 rounded border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
-                  View Public Dreams
+                  View Public SleepTalks
                 </a>
                 <ThemeToggle />
                 {user && (

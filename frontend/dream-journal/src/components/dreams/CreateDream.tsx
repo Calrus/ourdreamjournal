@@ -32,7 +32,7 @@ export function CreateDream() {
     const content = formData.get('content') as string;
 
     try {
-      await client.createDream({
+      const dream = await client.createDream({
         title,
         text: content,
         public: isPublic,
@@ -41,7 +41,7 @@ export function CreateDream() {
         clarity_rating: clarityRating,
         emotional_intensity_rating: emotionalIntensityRating,
       });
-      navigate('/dreams');
+      navigate(`/dreams/${dream.id}`);
     } catch (error) {
       console.error('Failed to create dream:', error);
     } finally {
