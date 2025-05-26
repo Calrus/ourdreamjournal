@@ -721,7 +721,7 @@ func main() {
 		resp, err := client.CreateChatCompletion(r.Context(), openai.ChatCompletionRequest{
 			Model: "deepseek/deepseek-prover-v2:free",
 			Messages: []openai.ChatCompletionMessage{
-				{Role: openai.ChatMessageRoleSystem, Content: "Summarize the following dream in one concise paragraph:"},
+				{Role: openai.ChatMessageRoleSystem, Content: "Summarize the following dream in one direct sentence."},
 				{Role: openai.ChatMessageRoleUser, Content: text},
 			},
 			MaxTokens: 120,
@@ -958,6 +958,94 @@ func main() {
 		}
 		json.NewEncoder(w).Encode(map[string]interface{}{"dreams": dreams})
 	}).Methods("GET")
+
+	// Comments: Add, list, delete
+	r.HandleFunc("/api/dreams/{dream_id}/comments", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		dreamID := vars["dream_id"]
+		if r.Method == "POST" {
+			userID, err := extractUserIDFromJWT(r)
+			if err != nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			var req struct{ text string }
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.text) == "" {
+				http.Error(w, "Invalid comment text", http.StatusBadRequest)
+				return
+			}
+			var commentID int
+			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamID, userID, req.text).Scan(&commentID)
+			if err != nil {
+				http.Error(w, "Failed to add comment", http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(map[string]interface{}{"id": commentID})
+			return
+		}
+		if r.Method == "GET" {
+			rows, err := dbpool.Query(context.Background(), "SELECT c.id, c.text, c.created_at, c.updated_at, u.id, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.dream_id=$1 ORDER BY c.created_at ASC", dreamID)
+			if err != nil {
+				http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
+				return
+			}
+			defer rows.Close()
+			comments := []map[string]interface{}{}
+			for rows.Next() {
+				var id, userID int
+				var text, username, displayName, profileImageURL string
+				var createdAt, updatedAt time.Time
+				if err := rows.Scan(&id, &text, &createdAt, &updatedAt, &userID, &username, &displayName, &profileImageURL); err == nil {
+					comments = append(comments, map[string]interface{}{
+						"id":        id,
+						"text":      text,
+						"createdAt": createdAt,
+						"updatedAt": updatedAt,
+						"user": map[string]interface{}{
+							"id":                userID,
+							"username":          username,
+							"display_name":      displayName,
+							"profile_image_url": profileImageURL,
+						},
+					})
+				}
+			}
+			json.NewEncoder(w).Encode(map[string]interface{}{"comments": comments})
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}).Methods("GET", "POST")
+
+	r.HandleFunc("/api/comments/{comment_id}", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "DELETE" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		userID, err := extractUserIDFromJWT(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		vars := mux.Vars(r)
+		commentID := vars["comment_id"]
+		var authorID int
+		err = dbpool.QueryRow(context.Background(), "SELECT user_id FROM comments WHERE id=$1", commentID).Scan(&authorID)
+		if err != nil {
+			http.Error(w, "Comment not found", http.StatusNotFound)
+			return
+		}
+		if fmt.Sprint(authorID) != userID {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		_, err = dbpool.Exec(context.Background(), "DELETE FROM comments WHERE id=$1", commentID)
+		if err != nil {
+			http.Error(w, "Failed to delete comment", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}).Methods("DELETE")
 
 	// Configure CORS
 	c := cors.New(cors.Options{

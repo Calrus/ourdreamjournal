@@ -18,4 +18,14 @@ CREATE TABLE IF NOT EXISTS dream_tags (
     id SERIAL PRIMARY KEY,
     dream_id INTEGER NOT NULL REFERENCES dreams(id) ON DELETE CASCADE,
     tag TEXT NOT NULL
+);
+
+-- Migration: Create comments table for dream comments
+CREATE TABLE IF NOT EXISTS comments (
+    id SERIAL PRIMARY KEY,
+    dream_id INTEGER NOT NULL REFERENCES dreams(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 ); 

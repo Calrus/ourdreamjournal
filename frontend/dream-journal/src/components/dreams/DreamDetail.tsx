@@ -23,6 +23,9 @@ export function DreamDetail() {
   const [prophecyError, setProphecyError] = useState<string | null>(null);
   const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
 
   useEffect(() => {
     const fetchDream = async () => {
@@ -38,6 +41,34 @@ export function DreamDetail() {
     };
     fetchDream();
   }, [id, navigate]);
+
+  useEffect(() => {
+    async function fetchComments() {
+      if (!dream) return;
+      try {
+        const res = await client.getComments(dream.id);
+        setComments(res.comments || []);
+      } catch {
+        setComments([]);
+      }
+    }
+    fetchComments();
+  }, [dream]);
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim() || !dream) return;
+    setCommentLoading(true);
+    try {
+      await client.addComment(dream.id, commentText);
+      setCommentText('');
+      // Refresh comments
+      const res = await client.getComments(dream.id);
+      setComments(res.comments || []);
+    } finally {
+      setCommentLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -252,6 +283,45 @@ export function DreamDetail() {
           ) : null}
         </AnimatePresence>
       </>
+      {/* Comments Section */}
+      <div className="mt-10">
+        <h2 className="text-xl font-semibold mb-4">Comments</h2>
+        {comments.length === 0 ? (
+          <div className="text-muted-foreground mb-4">No comments yet.</div>
+        ) : (
+          <div className="space-y-4 mb-4">
+            {comments.map((c) => (
+              <div key={c.id} className="border rounded p-3 flex items-start gap-3">
+                <img src={c.user.profile_image_url || ''} alt={c.user.display_name || c.user.username} className="w-8 h-8 rounded-full object-cover" />
+                <div>
+                  <div className="font-bold text-sm">{c.user.display_name || c.user.username}</div>
+                  <div className="text-xs text-muted-foreground mb-1">{new Date(c.createdAt).toLocaleString()}</div>
+                  <div className="text-base">{c.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {user && (
+          <form onSubmit={handleAddComment} className="flex gap-2 items-center">
+            <input
+              type="text"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              className="flex-1 border rounded px-3 py-2 text-sm"
+              placeholder="Add a comment..."
+              disabled={commentLoading}
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 rounded bg-primary text-white hover:bg-primary/80 disabled:opacity-50"
+              disabled={commentLoading || !commentText.trim()}
+            >
+              {commentLoading ? 'Posting...' : 'Post'}
+            </button>
+          </form>
+        )}
+      </div>
     </motion.div>
   );
 } 

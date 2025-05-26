@@ -225,6 +225,20 @@ const client = {
     });
     return response.data;
   },
+
+  // Comments
+  async getComments(dreamId: string): Promise<{ comments: any[] }> {
+    const response = await axios.get(`${API_URL}/api/dreams/${dreamId}/comments`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    return response.data;
+  },
+  async addComment(dreamId: string, text: string): Promise<any> {
+    const response = await axios.post(`${API_URL}/api/dreams/${dreamId}/comments`, { text }, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    return response.data;
+  },
 };
 
 export default client; 
