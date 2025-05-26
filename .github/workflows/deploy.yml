@@ -40,6 +40,10 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no -r frontend/dream-journal/build ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_SSH_HOST }}:/srv/ourdreamjournal/frontend/dream-journal/
 
+      - name: Remove old .env files from frontend on VM
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VM_SSH_USER }}@${{ secrets.VM_SSH_HOST }} 'rm -f /srv/ourdreamjournal/frontend/dream-journal/.env /srv/ourdreamjournal/frontend/dream-journal/.env.production'
+
       # BACKEND DEPLOYMENT (Docker Compose)
       - name: Deploy backend and services to VM
         run: |
