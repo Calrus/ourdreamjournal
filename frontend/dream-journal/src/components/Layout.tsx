@@ -19,7 +19,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="container flex h-14 items-center">
             <div className="mr-4 flex">
               <a className="mr-6 flex items-center space-x-2" href="/">
-                <span className="font-bold">Dream Journal</span>
+                <span className="font-bold">SleepTalk</span>
               </a>
             </div>
             <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">

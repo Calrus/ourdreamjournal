@@ -40,7 +40,7 @@ export const DreamCalendar: React.FC<DreamCalendarProps> = ({ dreamDates }) => {
 
   return (
     <div className="rounded-lg border bg-card p-6">
-      <h3 className="text-lg font-medium mb-4">Dream Calendar</h3>
+      <h3 className="text-lg font-medium mb-4">SleepTalk Calendar</h3>
       <Calendar
         tileContent={tileContent}
         calendarType="gregory"
