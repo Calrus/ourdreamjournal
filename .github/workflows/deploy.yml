@@ -24,6 +24,7 @@ jobs:
       - name: Set up frontend .env
         run: |
           echo "REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}" > frontend/dream-journal/.env
+          cat frontend/dream-journal/.env
 
       - name: Clean frontend build directory
         run: |
