@@ -11,6 +11,7 @@ import { DreamDetail } from './components/dreams/DreamDetail';
 import { PublicProfilePage } from './components/dreams/PublicProfilePage';
 import { EditProfilePage } from './components/dreams/EditProfilePage';
 import { useAuth } from './context/AuthContext';
+import { FriendsDreamsList } from './components/dreams/FriendsDreamsList';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -76,6 +77,16 @@ const App: React.FC = () => {
             />
             <Route path="/users/:username" element={<PublicProfilePage />} />
             <Route path="/profile" element={<EditProfilePage />} />
+            <Route
+              path="/friends"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <FriendsDreamsList />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
     </ThemeProvider>
   );

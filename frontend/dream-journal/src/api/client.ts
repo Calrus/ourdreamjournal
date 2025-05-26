@@ -184,6 +184,40 @@ const client = {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
   },
+
+  // Friend system
+  async sendFriendRequest(userId: string, friendId: string): Promise<{ status: string }> {
+    const response = await axios.post(`${API_URL}/api/friends/request`, { user_id: userId, friend_id: friendId }, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    return response.data;
+  },
+  async acceptFriendRequest(userId: string, friendId: string): Promise<{ status: string }> {
+    const response = await axios.post(`${API_URL}/api/friends/accept`, { user_id: userId, friend_id: friendId }, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    return response.data;
+  },
+  async removeFriend(userId: string, friendId: string): Promise<{ status: string }> {
+    const response = await axios.post(`${API_URL}/api/friends/remove`, { user_id: userId, friend_id: friendId }, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    return response.data;
+  },
+  async listFriends(userId: string): Promise<{ friends: any[] }> {
+    const response = await axios.get(`${API_URL}/api/friends`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      params: { user_id: userId },
+    });
+    return response.data;
+  },
+  async listFriendsDreams(userId: string): Promise<{ dreams: any[] }> {
+    const response = await axios.get(`${API_URL}/api/friends/dreams`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      params: { user_id: userId },
+    });
+    return response.data;
+  },
 };
 
 export default client; 

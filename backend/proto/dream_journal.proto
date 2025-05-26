@@ -99,6 +99,36 @@ message DreamInsight {
   repeated string tags = 3;
 }
 
+// Friend request/response
+message FriendRequestMsg {
+  string user_id = 1;
+  string friend_id = 2;
+}
+
+message FriendResponseMsg {
+  string status = 1; // 'pending', 'accepted', 'rejected'
+}
+
+message Friend {
+  string id = 1;
+  string username = 2;
+  string display_name = 3;
+  string profile_image_url = 4;
+}
+
+message FriendList {
+  repeated Friend friends = 1;
+}
+
+// List of dreams by friends
+message FriendsDreamsRequest {
+  string user_id = 1;
+}
+
+message FriendsDreamsResponse {
+  repeated Dream dreams = 1;
+}
+
 // DreamJournal service definition
 service DreamJournal {
   // Register creates a new user account
@@ -143,4 +173,34 @@ service DreamJournal {
 
   // GetAIInsights streams AI insights for a user's dreams
   rpc GetAIInsights(UserRequest) returns (stream DreamInsight);
+
+  // Friend system
+  rpc SendFriendRequest(FriendRequestMsg) returns (FriendResponseMsg) {
+    option (google.api.http) = {
+      post: "/api/friends/request"
+      body: "*"
+    };
+  }
+  rpc AcceptFriendRequest(FriendRequestMsg) returns (FriendResponseMsg) {
+    option (google.api.http) = {
+      post: "/api/friends/accept"
+      body: "*"
+    };
+  }
+  rpc RemoveFriend(FriendRequestMsg) returns (FriendResponseMsg) {
+    option (google.api.http) = {
+      post: "/api/friends/remove"
+      body: "*"
+    };
+  }
+  rpc ListFriends(UserRequest) returns (FriendList) {
+    option (google.api.http) = {
+      get: "/api/friends"
+    };
+  }
+  rpc ListFriendsDreams(FriendsDreamsRequest) returns (FriendsDreamsResponse) {
+    option (google.api.http) = {
+      get: "/api/friends/dreams"
+    };
+  }
 }

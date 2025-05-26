@@ -741,6 +741,199 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]string{"summary": summaryStr})
 	}).Methods("POST")
 
+	// Friend system endpoints
+	r.HandleFunc("/api/friends/request", func(w http.ResponseWriter, r *http.Request) {
+		userID, err := extractUserIDFromJWT(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		var req struct {
+			UserID   string `json:"user_id"`
+			FriendID string `json:"friend_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		if req.UserID != userID {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		// Check if already friends or pending
+		var status string
+		err = dbpool.QueryRow(context.Background(), "SELECT status FROM friends WHERE user_id=$1 AND friend_id=$2", req.UserID, req.FriendID).Scan(&status)
+		if err == nil {
+			json.NewEncoder(w).Encode(map[string]string{"status": status})
+			return
+		}
+		_, err = dbpool.Exec(context.Background(), "INSERT INTO friends (user_id, friend_id, status) VALUES ($1, $2, 'pending') ON CONFLICT (user_id, friend_id) DO NOTHING", req.UserID, req.FriendID)
+		if err != nil {
+			http.Error(w, "Failed to send friend request", http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"status": "pending"})
+	}).Methods("POST")
+
+	r.HandleFunc("/api/friends/accept", func(w http.ResponseWriter, r *http.Request) {
+		userID, err := extractUserIDFromJWT(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		var req struct {
+			UserID   string `json:"user_id"`
+			FriendID string `json:"friend_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		if req.FriendID != userID {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		_, err = dbpool.Exec(context.Background(), "UPDATE friends SET status='accepted', updated_at=NOW() WHERE user_id=$1 AND friend_id=$2 AND status='pending'", req.UserID, req.FriendID)
+		if err != nil {
+			http.Error(w, "Failed to accept friend request", http.StatusInternalServerError)
+			return
+		}
+		// Also insert reciprocal row if not exists
+		_, _ = dbpool.Exec(context.Background(), "INSERT INTO friends (user_id, friend_id, status) VALUES ($1, $2, 'accepted') ON CONFLICT (user_id, friend_id) DO UPDATE SET status='accepted', updated_at=NOW()", req.FriendID, req.UserID)
+		json.NewEncoder(w).Encode(map[string]string{"status": "accepted"})
+	}).Methods("POST")
+
+	r.HandleFunc("/api/friends/remove", func(w http.ResponseWriter, r *http.Request) {
+		userID, err := extractUserIDFromJWT(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		var req struct {
+			UserID   string `json:"user_id"`
+			FriendID string `json:"friend_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		if req.UserID != userID && req.FriendID != userID {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		_, err = dbpool.Exec(context.Background(), "DELETE FROM friends WHERE (user_id=$1 AND friend_id=$2) OR (user_id=$2 AND friend_id=$1)", req.UserID, req.FriendID)
+		if err != nil {
+			http.Error(w, "Failed to remove friend", http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"status": "removed"})
+	}).Methods("POST")
+
+	r.HandleFunc("/api/friends", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.URL.Query().Get("user_id")
+		if userID == "" {
+			var err error
+			userID, err = extractUserIDFromJWT(r)
+			if err != nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+		}
+		rows, err := dbpool.Query(context.Background(), "SELECT u.id, u.username, u.display_name, u.profile_image_url FROM friends f JOIN users u ON f.friend_id = u.id WHERE f.user_id=$1 AND f.status='accepted'", userID)
+		if err != nil {
+			http.Error(w, "Failed to list friends", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+		friends := []map[string]interface{}{}
+		for rows.Next() {
+			var id, username, displayName, profileImageURL sql.NullString
+			if err := rows.Scan(&id, &username, &displayName, &profileImageURL); err == nil {
+				friends = append(friends, map[string]interface{}{
+					"id":                id.String,
+					"username":          username.String,
+					"display_name":      displayName.String,
+					"profile_image_url": profileImageURL.String,
+				})
+			}
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{"friends": friends})
+	}).Methods("GET")
+
+	r.HandleFunc("/api/friends/dreams", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.URL.Query().Get("user_id")
+		if userID == "" {
+			var err error
+			userID, err = extractUserIDFromJWT(r)
+			if err != nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+		}
+		// Get all accepted friends' user IDs
+		rows, err := dbpool.Query(context.Background(), "SELECT friend_id FROM friends WHERE user_id=$1 AND status='accepted'", userID)
+		if err != nil {
+			http.Error(w, "Failed to list friends", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+		friendIDs := []string{}
+		for rows.Next() {
+			var fid string
+			if err := rows.Scan(&fid); err == nil {
+				friendIDs = append(friendIDs, fid)
+			}
+		}
+		if len(friendIDs) == 0 {
+			json.NewEncoder(w).Encode(map[string]interface{}{"dreams": []interface{}{}})
+			return
+		}
+		// Build query for all friends' dreams
+		query := "SELECT d.public_id, d.user_id, u.username, u.display_name, u.profile_image_url, d.title, d.text, d.public, d.created_at, d.updated_at, d.nightmare_rating, d.vividness_rating, d.clarity_rating, d.emotional_intensity_rating FROM dreams d JOIN users u ON d.user_id = u.id WHERE d.user_id = ANY($1) AND d.public=TRUE ORDER BY d.created_at DESC"
+		rows2, err := dbpool.Query(context.Background(), query, friendIDs)
+		if err != nil {
+			http.Error(w, "Failed to fetch friends' dreams", http.StatusInternalServerError)
+			return
+		}
+		defer rows2.Close()
+		dreams := []map[string]interface{}{}
+		for rows2.Next() {
+			var publicID, userID, username, title, text string
+			var displayName, profileImageURL sql.NullString
+			var public bool
+			var createdAt, updatedAt time.Time
+			var nightmareRating, vividnessRating, clarityRating, emotionalIntensityRating sql.NullInt32
+			if err := rows2.Scan(&publicID, &userID, &username, &displayName, &profileImageURL, &title, &text, &public, &createdAt, &updatedAt, &nightmareRating, &vividnessRating, &clarityRating, &emotionalIntensityRating); err == nil {
+				dream := map[string]interface{}{
+					"id":              publicID,
+					"userId":          userID,
+					"username":        username,
+					"displayName":     displayName.String,
+					"profileImageURL": profileImageURL.String,
+					"title":           title,
+					"text":            text,
+					"public":          public,
+					"createdAt":       createdAt,
+					"updatedAt":       updatedAt,
+				}
+				if nightmareRating.Valid {
+					dream["nightmare_rating"] = int(nightmareRating.Int32)
+				}
+				if vividnessRating.Valid {
+					dream["vividness_rating"] = int(vividnessRating.Int32)
+				}
+				if clarityRating.Valid {
+					dream["clarity_rating"] = int(clarityRating.Int32)
+				}
+				if emotionalIntensityRating.Valid {
+					dream["emotional_intensity_rating"] = int(emotionalIntensityRating.Int32)
+				}
+				dreams = append(dreams, dream)
+			}
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{"dreams": dreams})
+	}).Methods("GET")
+
 	// Configure CORS
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000", "http://34.174.78.61", "https://sleeptalk.to", "http://sleeptalk.to"},
