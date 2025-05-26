@@ -1,6 +1,7 @@
 # SleepTalk Frontend
 
 # retry!
+# please just work
 
 A modern, responsive web application for recording and managing dream entries. Built with React, TypeScript, and Tailwind CSS.
 
