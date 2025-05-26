@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -983,8 +984,14 @@ func main() {
 				http.Error(w, "Invalid comment text", http.StatusBadRequest)
 				return
 			}
+			// Convert userID (string) to integer for DB insert
+			userIDInt, err := strconv.Atoi(userID)
+			if err != nil {
+				http.Error(w, "Invalid user ID", http.StatusInternalServerError)
+				return
+			}
 			var commentID int
-			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamRowID, userID, req.Text).Scan(&commentID)
+			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamRowID, userIDInt, req.Text).Scan(&commentID)
 			if err != nil {
 				http.Error(w, "Failed to add comment", http.StatusInternalServerError)
 				return
