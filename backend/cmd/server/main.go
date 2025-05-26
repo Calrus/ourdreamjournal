@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -978,11 +977,6 @@ func main() {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			userIDInt, err := strconv.Atoi(userID)
-			if err != nil {
-				http.Error(w, "Invalid user ID", http.StatusInternalServerError)
-				return
-			}
 			var req struct {
 				Text string `json:"text"`
 			}
@@ -990,9 +984,9 @@ func main() {
 				http.Error(w, "Invalid comment text", http.StatusBadRequest)
 				return
 			}
-			log.Printf("[COMMENTS] Inserting comment: dreamRowID=%d, userIDInt=%d, text=%s", dreamRowID, userIDInt, req.Text)
+			log.Printf("[COMMENTS] Inserting comment: dreamRowID=%d, userID=%s, text=%s", dreamRowID, userID, req.Text)
 			var commentID int
-			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamRowID, userIDInt, req.Text).Scan(&commentID)
+			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamRowID, userID, req.Text).Scan(&commentID)
 			if err != nil {
 				log.Printf("[COMMENTS] Failed to add comment: %v", err)
 				http.Error(w, "Failed to add comment", http.StatusInternalServerError)
