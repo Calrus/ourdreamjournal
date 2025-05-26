@@ -36,6 +36,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 >
                   Friends' Posts
                 </a>
+                <a
+                  href="/friend-requests"
+                  className="mr-2 px-3 py-1 rounded border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  Friend Requests
+                </a>
                 <ThemeToggle />
                 {user && (
                   <a

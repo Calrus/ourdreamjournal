@@ -831,6 +831,30 @@ func main() {
 
 	r.HandleFunc("/api/friends", func(w http.ResponseWriter, r *http.Request) {
 		userID := r.URL.Query().Get("user_id")
+		pendingFor := r.URL.Query().Get("pending_for")
+		if pendingFor != "" {
+			// List pending friend requests for this user
+			rows, err := dbpool.Query(context.Background(), "SELECT u.id, u.username, u.display_name, u.profile_image_url FROM friends f JOIN users u ON f.user_id = u.id WHERE f.friend_id=$1 AND f.status='pending'", pendingFor)
+			if err != nil {
+				http.Error(w, "Failed to list friend requests", http.StatusInternalServerError)
+				return
+			}
+			defer rows.Close()
+			requests := []map[string]interface{}{{}}
+			for rows.Next() {
+				var id, username, displayName, profileImageURL sql.NullString
+				if err := rows.Scan(&id, &username, &displayName, &profileImageURL); err == nil {
+					requests = append(requests, map[string]interface{}{
+						"id":                id.String,
+						"username":          username.String,
+						"display_name":      displayName.String,
+						"profile_image_url": profileImageURL.String,
+					})
+				}
+			}
+			json.NewEncoder(w).Encode(map[string]interface{}{"requests": requests[1:]})
+			return
+		}
 		if userID == "" {
 			var err error
 			userID, err = extractUserIDFromJWT(r)

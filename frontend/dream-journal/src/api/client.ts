@@ -218,6 +218,13 @@ const client = {
     });
     return response.data;
   },
+  async listPendingFriendRequests(userId: string): Promise<{ requests: any[] }> {
+    const response = await axios.get(`${API_URL}/api/friends`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      params: { pending_for: userId },
+    });
+    return response.data;
+  },
 };
 
 export default client; 
