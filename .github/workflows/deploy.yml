@@ -25,6 +25,10 @@ jobs:
         run: |
           echo "REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}" > frontend/dream-journal/.env
 
+      - name: Clean frontend build directory
+        run: |
+          rm -rf frontend/dream-journal/build
+
       - name: Check frontend dependencies
         run: |
           cd frontend/dream-journal
@@ -34,6 +38,13 @@ jobs:
         run: |
           cd frontend/dream-journal
           CI=false npm run build
+
+      - name: Check for old backend IP in build output
+        run: |
+          if grep -rq "34.174.78.61" frontend/dream-journal/build; then
+            echo "Old backend IP found in build output!"
+            exit 1
+          fi
 
       # COPY FRONTEND BUILD TO VM
       - name: Copy frontend build to VM
