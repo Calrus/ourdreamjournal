@@ -742,7 +742,7 @@ func main() {
 
 	// Configure CORS
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://34.174.78.61"},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://34.174.78.61", "https://sleeptalk.to", "http://sleeptalk.to"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
