@@ -964,17 +964,23 @@ func main() {
 	r.HandleFunc("/api/dreams/{dream_id}/comments", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		dreamID := vars["dream_id"]
+		// Look up internal dream id from public_id for both POST and GET
+		var dreamRowID int
+		err := dbpool.QueryRow(context.Background(), "SELECT id FROM dreams WHERE public_id=$1", dreamID).Scan(&dreamRowID)
+		if err != nil {
+			log.Printf("[COMMENTS] Dream not found for public_id=%s", dreamID)
+			http.Error(w, "Dream not found", http.StatusNotFound)
+			return
+		}
 		if r.Method == "POST" {
 			userID, err := extractUserIDFromJWT(r)
 			if err != nil {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			// Look up internal dream id from public_id
-			var dreamRowID int
-			err = dbpool.QueryRow(context.Background(), "SELECT id FROM dreams WHERE public_id=$1", dreamID).Scan(&dreamRowID)
+			userIDInt, err := strconv.Atoi(userID)
 			if err != nil {
-				http.Error(w, "Dream not found", http.StatusNotFound)
+				http.Error(w, "Invalid user ID", http.StatusInternalServerError)
 				return
 			}
 			var req struct {
@@ -984,15 +990,11 @@ func main() {
 				http.Error(w, "Invalid comment text", http.StatusBadRequest)
 				return
 			}
-			// Convert userID (string) to integer for DB insert
-			userIDInt, err := strconv.Atoi(userID)
-			if err != nil {
-				http.Error(w, "Invalid user ID", http.StatusInternalServerError)
-				return
-			}
+			log.Printf("[COMMENTS] Inserting comment: dreamRowID=%d, userIDInt=%d, text=%s", dreamRowID, userIDInt, req.Text)
 			var commentID int
 			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamRowID, userIDInt, req.Text).Scan(&commentID)
 			if err != nil {
+				log.Printf("[COMMENTS] Failed to add comment: %v", err)
 				http.Error(w, "Failed to add comment", http.StatusInternalServerError)
 				return
 			}
@@ -1001,15 +1003,9 @@ func main() {
 			return
 		}
 		if r.Method == "GET" {
-			// Look up internal dream id from public_id for GET as well
-			var dreamRowID int
-			err = dbpool.QueryRow(context.Background(), "SELECT id FROM dreams WHERE public_id=$1", dreamID).Scan(&dreamRowID)
-			if err != nil {
-				http.Error(w, "Dream not found", http.StatusNotFound)
-				return
-			}
 			rows, err := dbpool.Query(context.Background(), "SELECT c.id, c.text, c.created_at, c.updated_at, u.id, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.dream_id=$1 ORDER BY c.created_at ASC", dreamRowID)
 			if err != nil {
+				log.Printf("[COMMENTS] Failed to fetch comments for dreamRowID=%d: %v", dreamRowID, err)
 				http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
 				return
 			}
@@ -1034,6 +1030,7 @@ func main() {
 					})
 				}
 			}
+			log.Printf("[COMMENTS] Fetched %d comments for dreamRowID=%d", len(comments), dreamRowID)
 			json.NewEncoder(w).Encode(map[string]interface{}{"comments": comments})
 			return
 		}
