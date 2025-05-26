@@ -969,6 +969,13 @@ func main() {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
+			// Look up internal dream id from public_id
+			var dreamRowID int
+			err = dbpool.QueryRow(context.Background(), "SELECT id FROM dreams WHERE public_id=$1", dreamID).Scan(&dreamRowID)
+			if err != nil {
+				http.Error(w, "Dream not found", http.StatusNotFound)
+				return
+			}
 			var req struct {
 				Text string `json:"text"`
 			}
@@ -977,7 +984,7 @@ func main() {
 				return
 			}
 			var commentID int
-			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamID, userID, req.Text).Scan(&commentID)
+			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamRowID, userID, req.Text).Scan(&commentID)
 			if err != nil {
 				http.Error(w, "Failed to add comment", http.StatusInternalServerError)
 				return
