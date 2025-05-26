@@ -994,7 +994,14 @@ func main() {
 			return
 		}
 		if r.Method == "GET" {
-			rows, err := dbpool.Query(context.Background(), "SELECT c.id, c.text, c.created_at, c.updated_at, u.id, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.dream_id=$1 ORDER BY c.created_at ASC", dreamID)
+			// Look up internal dream id from public_id for GET as well
+			var dreamRowID int
+			err = dbpool.QueryRow(context.Background(), "SELECT id FROM dreams WHERE public_id=$1", dreamID).Scan(&dreamRowID)
+			if err != nil {
+				http.Error(w, "Dream not found", http.StatusNotFound)
+				return
+			}
+			rows, err := dbpool.Query(context.Background(), "SELECT c.id, c.text, c.created_at, c.updated_at, u.id, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.dream_id=$1 ORDER BY c.created_at ASC", dreamRowID)
 			if err != nil {
 				http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
 				return
