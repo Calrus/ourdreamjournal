@@ -969,13 +969,15 @@ func main() {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			var req struct{ text string }
-			if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.text) == "" {
+			var req struct {
+				Text string `json:"text"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Text) == "" {
 				http.Error(w, "Invalid comment text", http.StatusBadRequest)
 				return
 			}
 			var commentID int
-			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamID, userID, req.text).Scan(&commentID)
+			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamID, userID, req.Text).Scan(&commentID)
 			if err != nil {
 				http.Error(w, "Failed to add comment", http.StatusInternalServerError)
 				return
