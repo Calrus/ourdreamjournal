@@ -9,7 +9,7 @@ export function CreateDream() {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
   const [nightmareRating, setNightmareRating] = useState(5);
   const [vividnessRating, setVividnessRating] = useState(5);
   const [clarityRating, setClarityRating] = useState(5);
@@ -172,12 +172,12 @@ export function CreateDream() {
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
-            id="public"
-            checked={isPublic}
-            onChange={e => setIsPublic(e.target.checked)}
+            id="private"
+            checked={!isPublic}
+            onChange={e => setIsPublic(!e.target.checked)}
             className="mr-2"
           />
-          <label htmlFor="public" className="text-sm">Make this dream public</label>
+          <label htmlFor="private" className="text-sm">Mark as private</label>
         </div>
 
         <div className="flex justify-end gap-4">
