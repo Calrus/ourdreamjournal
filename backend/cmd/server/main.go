@@ -700,6 +700,7 @@ func main() {
 			http.Error(w, "Dream not found", http.StatusNotFound)
 			return
 		}
+		//added comment
 		summaryStr := ""
 		if summary.Valid {
 			summaryStr = summary.String
