@@ -999,10 +999,10 @@ func main() {
 				id                                           int
 				text, username, displayName, profileImageURL string
 				createdAt, updatedAt                         time.Time
-				userId                                       int
+				userId                                       string
 			)
 			err = dbpool.QueryRow(context.Background(),
-				"SELECT c.id, c.text, c.created_at, c.updated_at, u.id, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id=$1",
+				"SELECT c.id, c.text, c.created_at, c.updated_at, u.id::text, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id=$1",
 				commentID,
 			).Scan(&id, &text, &createdAt, &updatedAt, &userId, &username, &displayName, &profileImageURL)
 			if err != nil {
