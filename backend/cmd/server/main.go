@@ -1003,10 +1003,10 @@ func main() {
 			}
 			// Fetch the full comment with user info
 			var (
-				id                                           int
-				text, username, displayName, profileImageURL string
-				createdAt, updatedAt                         time.Time
-				userId                                       string
+				id                           int
+				text, username, userId       string
+				displayName, profileImageURL sql.NullString
+				createdAt, updatedAt         time.Time
 			)
 			err = dbpool.QueryRow(context.Background(),
 				"SELECT c.id, c.text, c.created_at, c.updated_at, u.id::text, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id=$1",
@@ -1035,8 +1035,8 @@ func main() {
 				"user": map[string]interface{}{
 					"id":                userId,
 					"username":          username,
-					"display_name":      displayName,
-					"profile_image_url": profileImageURL,
+					"display_name":      displayName.String,
+					"profile_image_url": profileImageURL.String,
 				},
 				"debug": map[string]interface{}{
 					"received_public_id":  dreamID,
