@@ -1029,7 +1029,7 @@ func main() {
 			return
 		}
 		if r.Method == "GET" {
-			rows, err := dbpool.Query(context.Background(), "SELECT c.id, c.text, c.created_at, c.updated_at, u.id, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.dream_id=$1 ORDER BY c.created_at ASC", dreamRowID)
+			rows, err := dbpool.Query(context.Background(), "SELECT c.id, c.text, c.created_at, c.updated_at, u.id::text, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.dream_id=$1 ORDER BY c.created_at ASC", dreamRowID)
 			if err != nil {
 				log.Printf("[COMMENTS] Failed to fetch comments for dreamRowID=%d: %v", dreamRowID, err)
 				http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
@@ -1039,8 +1039,8 @@ func main() {
 			comments := []map[string]interface{}{}
 			count := 0
 			for rows.Next() {
-				var id, userID int
-				var text, username, displayName, profileImageURL string
+				var id int
+				var userID, text, username, displayName, profileImageURL string
 				var createdAt, updatedAt time.Time
 				if err := rows.Scan(&id, &text, &createdAt, &updatedAt, &userID, &username, &displayName, &profileImageURL); err == nil {
 					comments = append(comments, map[string]interface{}{
