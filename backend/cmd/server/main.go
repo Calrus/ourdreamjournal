@@ -963,6 +963,7 @@ func main() {
 	r.HandleFunc("/api/dreams/{dream_id}/comments", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		dreamID := vars["dream_id"]
+		log.Printf("[COMMENTS][%s] Received request for dream public_id=%s", r.Method, dreamID)
 		// Look up internal dream id from public_id for both POST and GET
 		var dreamRowID int
 		err := dbpool.QueryRow(context.Background(), "SELECT id FROM dreams WHERE public_id=$1", dreamID).Scan(&dreamRowID)
@@ -971,6 +972,7 @@ func main() {
 			http.Error(w, "Dream not found", http.StatusNotFound)
 			return
 		}
+		log.Printf("[COMMENTS][%s] Resolved public_id=%s to dreamRowID=%d", r.Method, dreamID, dreamRowID)
 		if r.Method == "POST" {
 			userID, err := extractUserIDFromJWT(r)
 			if err != nil {
@@ -992,8 +994,38 @@ func main() {
 				http.Error(w, "Failed to add comment", http.StatusInternalServerError)
 				return
 			}
+			// Fetch the full comment with user info
+			var (
+				id                                           int
+				text, username, displayName, profileImageURL string
+				createdAt, updatedAt                         time.Time
+				userId                                       int
+			)
+			err = dbpool.QueryRow(context.Background(),
+				"SELECT c.id, c.text, c.created_at, c.updated_at, u.id, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id=$1",
+				commentID,
+			).Scan(&id, &text, &createdAt, &updatedAt, &userId, &username, &displayName, &profileImageURL)
+			if err != nil {
+				log.Printf("[COMMENTS] Failed to fetch inserted comment: %v", err)
+				http.Error(w, "Failed to fetch comment", http.StatusInternalServerError)
+				return
+			}
+			comment := map[string]interface{}{
+				"id":        id,
+				"text":      text,
+				"createdAt": createdAt,
+				"updatedAt": updatedAt,
+				"user": map[string]interface{}{
+					"id":                userId,
+					"username":          username,
+					"display_name":      displayName,
+					"profile_image_url": profileImageURL,
+				},
+			}
+			log.Printf("[COMMENTS] Added comment id=%d for dreamRowID=%d", id, dreamRowID)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(map[string]interface{}{"id": commentID})
+			json.NewEncoder(w).Encode(comment)
 			return
 		}
 		if r.Method == "GET" {
@@ -1005,6 +1037,7 @@ func main() {
 			}
 			defer rows.Close()
 			comments := []map[string]interface{}{}
+			count := 0
 			for rows.Next() {
 				var id, userID int
 				var text, username, displayName, profileImageURL string
@@ -1022,9 +1055,10 @@ func main() {
 							"profile_image_url": profileImageURL,
 						},
 					})
+					count++
 				}
 			}
-			log.Printf("[COMMENTS] Fetched %d comments for dreamRowID=%d", len(comments), dreamRowID)
+			log.Printf("[COMMENTS][GET] dreamRowID=%d, found %d comments", dreamRowID, count)
 			json.NewEncoder(w).Encode(map[string]interface{}{"comments": comments})
 			return
 		}
