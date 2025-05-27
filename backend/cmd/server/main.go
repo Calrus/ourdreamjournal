@@ -1014,7 +1014,17 @@ func main() {
 			).Scan(&id, &text, &createdAt, &updatedAt, &userId, &username, &displayName, &profileImageURL)
 			if err != nil {
 				log.Printf("[COMMENTS] Failed to fetch inserted comment: %v", err)
-				http.Error(w, "Failed to fetch comment", http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"error": "Failed to fetch comment",
+					"debug": map[string]interface{}{
+						"received_public_id":  dreamID,
+						"resolved_dreamRowID": dreamRowID,
+						"inserted_comment_id": commentID,
+						"user_id":             userID,
+					},
+				})
 				return
 			}
 			comment := map[string]interface{}{
@@ -1028,6 +1038,12 @@ func main() {
 					"display_name":      displayName,
 					"profile_image_url": profileImageURL,
 				},
+				"debug": map[string]interface{}{
+					"received_public_id":  dreamID,
+					"resolved_dreamRowID": dreamRowID,
+					"inserted_comment_id": commentID,
+					"user_id":             userID,
+				},
 			}
 			log.Printf("[COMMENTS] Added comment id=%d for dreamRowID=%d", id, dreamRowID)
 			w.Header().Set("Content-Type", "application/json")
@@ -1039,7 +1055,15 @@ func main() {
 			rows, err := dbpool.Query(context.Background(), "SELECT c.id, c.text, c.created_at, c.updated_at, u.id::text, u.username, u.display_name, u.profile_image_url FROM comments c JOIN users u ON c.user_id = u.id WHERE c.dream_id=$1 ORDER BY c.created_at ASC", dreamRowID)
 			if err != nil {
 				log.Printf("[COMMENTS] Failed to fetch comments for dreamRowID=%d: %v", dreamRowID, err)
-				http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"error": "Failed to fetch comments",
+					"debug": map[string]interface{}{
+						"received_public_id":  dreamID,
+						"resolved_dreamRowID": dreamRowID,
+					},
+				})
 				return
 			}
 			defer rows.Close()
@@ -1066,7 +1090,15 @@ func main() {
 				}
 			}
 			log.Printf("[COMMENTS][GET] dreamRowID=%d, found %d comments", dreamRowID, count)
-			json.NewEncoder(w).Encode(map[string]interface{}{"comments": comments})
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"comments": comments,
+				"debug": map[string]interface{}{
+					"received_public_id":  dreamID,
+					"resolved_dreamRowID": dreamRowID,
+					"comments_count":      count,
+				},
+			})
 			return
 		}
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
