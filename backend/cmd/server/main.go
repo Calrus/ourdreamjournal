@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -974,9 +975,15 @@ func main() {
 		}
 		log.Printf("[COMMENTS][%s] Resolved public_id=%s to dreamRowID=%d", r.Method, dreamID, dreamRowID)
 		if r.Method == "POST" {
-			userID, err := extractUserIDFromJWT(r)
+			userIDStr, err := extractUserIDFromJWT(r)
 			if err != nil {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			userID, err := strconv.Atoi(userIDStr)
+			if err != nil {
+				log.Printf("[COMMENTS] Invalid userID in JWT: %v", err)
+				http.Error(w, "Invalid user ID", http.StatusUnauthorized)
 				return
 			}
 			var req struct {
@@ -986,7 +993,7 @@ func main() {
 				http.Error(w, "Invalid comment text", http.StatusBadRequest)
 				return
 			}
-			log.Printf("[COMMENTS] Inserting comment: dreamRowID=%d, userID=%s, text=%s", dreamRowID, userID, req.Text)
+			log.Printf("[COMMENTS] Inserting comment: dreamRowID=%d, userID=%d, text=%s", dreamRowID, userID, req.Text)
 			var commentID int
 			err = dbpool.QueryRow(context.Background(), "INSERT INTO comments (dream_id, user_id, text, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id", dreamRowID, userID, req.Text).Scan(&commentID)
 			if err != nil {
