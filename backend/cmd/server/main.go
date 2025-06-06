@@ -131,7 +131,8 @@ func main() {
 		}
 		var email, username string
 		var createdAt time.Time
-		err = dbpool.QueryRow(context.Background(), "SELECT email, username, created_at FROM users WHERE id=$1", userID).Scan(&email, &username, &createdAt)
+		var isAdmin bool
+		err = dbpool.QueryRow(context.Background(), "SELECT email, username, created_at, is_admin FROM users WHERE id=$1", userID).Scan(&email, &username, &createdAt, &isAdmin)
 		if err != nil {
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
@@ -143,7 +144,10 @@ func main() {
 			CreatedAt: createdAt.Unix(),
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(user)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"user":    user,
+			"isAdmin": isAdmin,
+		})
 	}).Methods("GET")
 
 	// Public profile page
@@ -457,7 +461,14 @@ func main() {
 				http.Error(w, "Database error", http.StatusInternalServerError)
 				return
 			}
-			if dreamOwnerID != userID {
+			// Check if user is admin
+			var isAdmin bool
+			err = dbpool.QueryRow(context.Background(), "SELECT is_admin FROM users WHERE id=$1", userID).Scan(&isAdmin)
+			if err != nil {
+				http.Error(w, "Database error", http.StatusInternalServerError)
+				return
+			}
+			if dreamOwnerID != userID && !isAdmin {
 				http.Error(w, "Forbidden: not your dream", http.StatusForbidden)
 				return
 			}
@@ -1243,23 +1254,30 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("[REGISTER] Success for email: %s", req.Email)
-	resp := AuthResponse{
-		User: User{
-			ID:              fmt.Sprint(userID),
-			Email:           req.Email,
-			Username:        req.Username,
-			DisplayName:     req.Username,
-			Description:     "",
-			ProfileImageURL: "",
-			CreatedAt:       time.Now().Unix(),
-		},
+	var isAdmin bool
+	err = dbpool.QueryRow(context.Background(), "SELECT is_admin FROM users WHERE id=$1", userID).Scan(&isAdmin)
+	if err != nil {
+		http.Error(w, "Failed to fetch admin status", http.StatusInternalServerError)
+		return
 	}
 	token, err := generateJWT(fmt.Sprint(userID))
 	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		http.Error(w, "Failed to generate JWT", http.StatusInternalServerError)
 		return
 	}
-	resp.Token = token
+	resp := map[string]interface{}{
+		"user": map[string]interface{}{
+			"id":                fmt.Sprint(userID),
+			"email":             req.Email,
+			"username":          req.Username,
+			"display_name":      req.Username,
+			"description":       "",
+			"profile_image_url": "",
+			"created_at":        time.Now().Unix(),
+		},
+		"token":   token,
+		"isAdmin": isAdmin,
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
@@ -1277,13 +1295,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Fetch user
+	var isAdmin bool
 	var userID int
 	var username, passwordHash string
 	var createdAt time.Time
 	err := dbpool.QueryRow(context.Background(),
-		"SELECT id, username, password_hash, created_at FROM users WHERE email=$1",
+		"SELECT id, username, password_hash, created_at, is_admin FROM users WHERE email=$1",
 		req.Email,
-	).Scan(&userID, &username, &passwordHash, &createdAt)
+	).Scan(&userID, &username, &passwordHash, &createdAt, &isAdmin)
 	if err != nil {
 		http.Error(w, "ERR_USER_NOT_FOUND", http.StatusUnauthorized)
 		return
@@ -1298,20 +1317,21 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ERR_WRONG_PASSWORD", http.StatusUnauthorized)
 		return
 	}
-	resp := AuthResponse{
-		User: User{
-			ID:        fmt.Sprint(userID),
-			Email:     req.Email,
-			Username:  username,
-			CreatedAt: createdAt.Unix(),
-		},
-	}
 	token, err := generateJWT(fmt.Sprint(userID))
 	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		http.Error(w, "Failed to generate JWT", http.StatusInternalServerError)
 		return
 	}
-	resp.Token = token
+	resp := map[string]interface{}{
+		"user": map[string]interface{}{
+			"id":         fmt.Sprint(userID),
+			"email":      req.Email,
+			"username":   username,
+			"created_at": createdAt.Unix(),
+		},
+		"token":   token,
+		"isAdmin": isAdmin,
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }

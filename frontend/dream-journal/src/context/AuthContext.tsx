@@ -9,6 +9,7 @@ interface User {
   email: string;
   username: string;
   created_at: number;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
@@ -62,12 +63,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       const response = await axios.post(`${API_URL}/api/login`, { email, password });
-      const { user, token } = response.data;
+      const { user, token, isAdmin } = response.data;
       if (!user || !token) {
         throw new Error('Invalid response from server');
       }
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
+      const userWithAdmin = { ...user, isAdmin };
+      setUser(userWithAdmin);
+      localStorage.setItem('user', JSON.stringify(userWithAdmin));
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       // Only navigate if login is successful
@@ -92,12 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username, 
         password 
       });
-      const { user, token } = response.data;
+      const { user, token, isAdmin } = response.data;
       if (!user || !token) {
         throw new Error('Invalid response from server');
       }
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
+      const userWithAdmin = { ...user, isAdmin };
+      setUser(userWithAdmin);
+      localStorage.setItem('user', JSON.stringify(userWithAdmin));
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const from = location.state?.from?.pathname || '/';

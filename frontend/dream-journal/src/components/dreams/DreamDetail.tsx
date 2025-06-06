@@ -6,7 +6,7 @@ import { Badge } from '../ui/badge';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { format } from 'date-fns';
-import { Tag as TagIcon, Trash } from 'lucide-react';
+import { Tag as TagIcon, Trash, MoreVertical } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export function DreamDetail() {
@@ -87,7 +87,7 @@ export function DreamDetail() {
     );
   }
 
-  const canDelete = user && dream.userId === user.id;
+  const canDelete = user && (dream.userId === user.id || user.isAdmin);
 
   return (
     <motion.div
@@ -290,16 +290,66 @@ export function DreamDetail() {
           <div className="text-muted-foreground mb-4">No comments yet.</div>
         ) : (
           <div className="space-y-4 mb-4">
-            {comments.map((c) => (
-              <div key={c.id} className="border rounded p-3 flex items-start gap-3">
-                <img src={c.user.profile_image_url || ''} alt={c.user.display_name || c.user.username} className="w-8 h-8 rounded-full object-cover" />
-                <div>
-                  <div className="font-bold text-sm">{c.user.display_name || c.user.username}</div>
-                  <div className="text-xs text-muted-foreground mb-1">{new Date(c.createdAt).toLocaleString()}</div>
-                  <div className="text-base">{c.text}</div>
+            {comments.map((c) => {
+              const isOwnComment = user && c.user && c.user.id === user.id;
+              return (
+                <div key={c.id} className="border rounded p-3 flex items-start gap-3 relative group">
+                  <img src={c.user.profile_image_url || ''} alt={c.user.display_name || c.user.username} className="w-8 h-8 rounded-full object-cover" />
+                  <div className="flex-1">
+                    <div className="font-bold text-sm flex items-center gap-2">
+                      {c.user.display_name || c.user.username}
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">{new Date(c.createdAt).toLocaleString()}</div>
+                    <div className="text-base">{c.text}</div>
+                  </div>
+                  {isOwnComment && (
+                    <div className="absolute top-2 right-2">
+                      <button
+                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                        onClick={e => {
+                          e.preventDefault();
+                          const menu = document.getElementById(`comment-menu-${c.id}`);
+                          if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                        }}
+                        aria-label="Comment options"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      <div
+                        id={`comment-menu-${c.id}`}
+                        className="z-10 absolute right-0 mt-2 w-24 bg-white dark:bg-gray-800 border rounded shadow-lg hidden"
+                        onMouseLeave={e => (e.currentTarget.style.display = 'none')}
+                      >
+                        <button
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600"
+                          onClick={async () => {
+                            if (!window.confirm('Delete this comment?')) return;
+                            try {
+                              await client.deleteComment(c.id);
+                              // Refresh comments
+                              const res = await client.getComments(dream.id);
+                              setComments(res.comments || []);
+                            } catch {
+                              alert('Failed to delete comment.');
+                            }
+                            const menu = document.getElementById(`comment-menu-${c.id}`);
+                            if (menu) menu.style.display = 'none';
+                          }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                          disabled
+                        >
+                          Edit (coming soon)
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         {user && (

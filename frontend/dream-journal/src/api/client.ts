@@ -229,15 +229,24 @@ const client = {
   // Comments
   async getComments(dreamId: string): Promise<{ comments: any[] }> {
     const response = await axios.get(`${API_URL}/api/dreams/${dreamId}/comments`, {
+      withCredentials: true,
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
     return response.data;
   },
   async addComment(dreamId: string, text: string): Promise<any> {
-    const response = await axios.post(`${API_URL}/api/dreams/${dreamId}/comments`, { text }, {
+    const response = await axios.post(
+      `${API_URL}/api/dreams/${dreamId}/comments`,
+      { text },
+      { withCredentials: true, headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+    );
+    return response.data;
+  },
+  async deleteComment(commentId: number): Promise<void> {
+    await axios.delete(`${API_URL}/api/comments/${commentId}`, {
+      withCredentials: true,
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-    return response.data;
   },
 };
 
