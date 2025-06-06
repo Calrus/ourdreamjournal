@@ -3,14 +3,16 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { dreamService, Dream } from '../../services/dreamService';
 import { format } from 'date-fns';
-import { Tag as TagIcon, ArrowLeft } from 'lucide-react';
+import { Tag as TagIcon, ArrowLeft, Trash } from 'lucide-react';
 import { Avatar } from '../ui/avatar';
+import { useAuth } from '../../context/AuthContext';
 
 export function PublicDreamsPage() {
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const { user } = useAuth();
   // Collect all tags from dreams
   const allTags = Array.from(new Set((dreams ?? []).flatMap((d) => d.tags || [])));
 
@@ -115,6 +117,24 @@ export function PublicDreamsPage() {
                   </div>
                   <div className="flex items-center justify-between mt-auto pt-4">
                     <span className="text-xs text-muted-foreground">{format(new Date(dream.createdAt), 'MMM d, yyyy h:mm a')}</span>
+                    {user?.isAdmin && (
+                      <button
+                        className="ml-2 p-1 text-red-500 hover:text-red-700"
+                        title="Delete Dream"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          if (!window.confirm('Are you sure you want to delete this dream? This cannot be undone.')) return;
+                          try {
+                            await dreamService.deleteDream(dream.id);
+                            setDreams((prev) => prev.filter((d) => d.id !== dream.id));
+                          } catch {
+                            alert('Failed to delete dream.');
+                          }
+                        }}
+                      >
+                        <Trash className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
                 </Link>
               </motion.div>
