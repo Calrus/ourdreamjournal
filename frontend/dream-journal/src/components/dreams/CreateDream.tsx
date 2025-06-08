@@ -21,6 +21,8 @@ export function CreateDream() {
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [tagError, setTagError] = useState<string | null>(null);
+  const [tagLoading, setTagLoading] = useState(false);
+  const [tagGenError, setTagGenError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,20 +49,27 @@ export function CreateDream() {
         clarity_rating: clarityRating,
         emotional_intensity_rating: emotionalIntensityRating,
       });
-      // Fetch AI-generated tags
-      const tagResp = await axios.post(`/api/dreams/tags`, {
-        title,
-        text: content,
-        public: isPublic,
-        nightmare_rating: nightmareRating,
-        vividness_rating: vividnessRating,
-        clarity_rating: clarityRating,
-        emotional_intensity_rating: emotionalIntensityRating,
-      });
-      setTags(tagResp.data.tags || []);
+      setTagLoading(true);
+      setTagGenError(null);
+      let aiTags: string[] = [];
+      try {
+        const tagResp = await axios.post(`/api/dreams/tags`, {
+          title,
+          text: content,
+          public: isPublic,
+          nightmare_rating: nightmareRating,
+          vividness_rating: vividnessRating,
+          clarity_rating: clarityRating,
+          emotional_intensity_rating: emotionalIntensityRating,
+        });
+        aiTags = tagResp.data.tags || [];
+      } catch (err) {
+        setTagGenError('Failed to generate tags automatically. You can add tags manually.');
+      }
+      setTags(aiTags);
       setDreamId(dream.id);
       setStep('tags');
-      // Don't navigate yet
+      setTagLoading(false);
       return;
     } catch (error) {
       console.error('Failed to create dream:', error);
@@ -244,31 +253,38 @@ export function CreateDream() {
       )}
       {step === 'tags' && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold mb-4">Edit Tags</h2>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {tags.map(tag => (
-              <span key={tag} className="bg-primary text-white px-3 py-1 rounded-full flex items-center gap-2">
-                {tag}
-                <button type="button" className="ml-1 text-white hover:text-red-300" onClick={() => handleRemoveTag(tag)}>&times;</button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newTag}
-              onChange={e => setNewTag(e.target.value)}
-              placeholder="Add a tag (1-2 words)"
-              className="border rounded px-2 py-1"
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } }}
-            />
-            <button type="button" className="bg-primary text-white px-3 py-1 rounded" onClick={handleAddTag}>Add</button>
-          </div>
-          {tagError && <div className="text-red-500 text-sm">{tagError}</div>}
-          <div className="flex gap-2 mt-4">
-            <button type="button" className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground" onClick={() => navigate('/dreams')}>Cancel</button>
-            <button type="button" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90" onClick={handleConfirmTags}>Save Dream</button>
-          </div>
+          {tagLoading ? (
+            <div className="text-center py-8">Generating tags...</div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold mb-4">Edit Tags</h2>
+              {tagGenError && <div className="text-red-500 text-sm mb-2">{tagGenError}</div>}
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tags.map(tag => (
+                  <span key={tag} className="bg-primary text-white px-3 py-1 rounded-full flex items-center gap-2">
+                    {tag}
+                    <button type="button" className="ml-1 text-white hover:text-red-300" onClick={() => handleRemoveTag(tag)}>&times;</button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTag}
+                  onChange={e => setNewTag(e.target.value)}
+                  placeholder="Add a tag (1-2 words)"
+                  className="border rounded px-2 py-1"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } }}
+                />
+                <button type="button" className="bg-primary text-white px-3 py-1 rounded" onClick={handleAddTag}>Add</button>
+              </div>
+              {tagError && <div className="text-red-500 text-sm">{tagError}</div>}
+              <div className="flex gap-2 mt-4">
+                <button type="button" className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground" onClick={() => navigate('/dreams')}>Cancel</button>
+                <button type="button" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90" onClick={handleConfirmTags}>Save Dream</button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </motion.div>
