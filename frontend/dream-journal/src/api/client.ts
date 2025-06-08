@@ -248,6 +248,14 @@ const client = {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
   },
+
+  async updateDreamTags(id: string, tags: string[]): Promise<void> {
+    await axios.put(`${API_URL}/api/dreams/${id}/tags`, { tags }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+  },
 };
 
 export default client; 

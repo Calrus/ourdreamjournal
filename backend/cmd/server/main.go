@@ -1146,6 +1146,68 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 	}).Methods("DELETE")
 
+	// Add endpoint to update tags for a dream
+	r.HandleFunc("/api/dreams/{public_id}/tags", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PUT" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		vars := mux.Vars(r)
+		publicID := vars["public_id"]
+		userID, err := extractUserIDFromJWT(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		// Find dream and check ownership
+		var dreamOwnerID string
+		var dreamRowID int
+		err = dbpool.QueryRow(context.Background(), "SELECT user_id, id FROM dreams WHERE public_id=$1", publicID).Scan(&dreamOwnerID, &dreamRowID)
+		if err == pgx.ErrNoRows {
+			http.Error(w, "Dream not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+		// Check if user is admin
+		var isAdmin bool
+		err = dbpool.QueryRow(context.Background(), "SELECT is_admin FROM users WHERE id=$1", userID).Scan(&isAdmin)
+		if err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+		if dreamOwnerID != userID && !isAdmin {
+			http.Error(w, "Forbidden: not your dream", http.StatusForbidden)
+			return
+		}
+		var req struct {
+			Tags []string `json:"tags"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		// Remove all existing tags for this dream
+		_, err = dbpool.Exec(context.Background(), "DELETE FROM dream_tags WHERE dream_id=$1", dreamRowID)
+		if err != nil {
+			http.Error(w, "Failed to remove old tags", http.StatusInternalServerError)
+			return
+		}
+		// Insert new tags
+		for _, tag := range req.Tags {
+			if strings.TrimSpace(tag) == "" {
+				continue
+			}
+			_, err := dbpool.Exec(context.Background(), "INSERT INTO dream_tags (dream_id, tag) VALUES ($1, $2)", dreamRowID, tag)
+			if err != nil {
+				http.Error(w, "Failed to insert tag", http.StatusInternalServerError)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}).Methods("PUT")
+
 	// Configure CORS
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000", "http://34.174.78.61", "https://sleeptalk.to", "http://sleeptalk.to"},
